@@ -1,5 +1,4 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
 
 let connection;
 
@@ -12,19 +11,33 @@ async function connectDB() {
       database: process.env.DB_NAME,
       port: process.env.DB_PORT,
     });
+
     console.log('📦 Conexión a MySQL exitosa');
 
+    // Manejar desconexión y reconexión
+    connection.on('error', async (err) => {
+      if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+        console.error('⚠️ Conexión perdida con MySQL, intentando reconectar...');
+        await connectDB();
+      } else {
+        throw err;
+      }
+    });
 
-
+    return connection;
   } catch (error) {
     console.error('❌ Error al conectar a MySQL:', error.message);
     throw error;
   }
 }
 
-
 async function query(sql, params = []) {
   try {
+    // Verificar si la conexión está cerrada y volver a conectarse si es necesario
+    if (!connection || connection.connection.state === 'disconnected') {
+      console.warn('🔄 Reconectando a MySQL...');
+      await connectDB();
+    }
     const [results] = await connection.execute(sql, params);
     return results;
   } catch (error) {
@@ -32,6 +45,5 @@ async function query(sql, params = []) {
     throw error;
   }
 }
-
 
 module.exports = { connectDB, query };
