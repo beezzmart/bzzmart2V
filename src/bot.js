@@ -28,7 +28,7 @@ async function startBot() {
 // Manejar el comando /start
 bot.start((ctx) => {
   const userId = ctx.from.id; // ID del usuario
- const fname = ctx.from.firstname; // ID del usuario
+
 
   // Generar la URL de la WebApp con el user_id
   const webAppUrl = `https://beesmart.ct.ws/public/?user_id=${userId}`;
@@ -36,7 +36,7 @@ bot.start((ctx) => {
 
   // Mensaje general para otros casos
   return ctx.reply(
-    "Bienvenido " + $fname + " a esta dulce aventura, recolecta miel cada 24 horas, junta muchos litros y hazte rico. Has recibido como regalo 1 Colmena + 1 Abeja (free). Entra ahora y recolecta gotas de miel:",
+    "Bienvenido a esta dulce aventura, recolecta miel cada 24 horas, junta muchos litros y hazte rico. Has recibido como regalo 1 Colmena + 1 Abeja (free). Entra ahora y recolecta gotas de miel:",
     {
       reply_markup: {
         inline_keyboard: [
