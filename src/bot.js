@@ -66,19 +66,7 @@ bot.start((ctx) => {
     });
 
     // Comando /add_bee para agregar una abeja a una colmena
-    bot.command("add_bee", async (ctx) => {
-      const args = ctx.message.text.split(" ").slice(1); // /add_bee <colonyId> <beeType> [<txid>]
-      const colonyId = parseInt(args[0], 10);
-      const beeType = args[1];
-      const txid = args[2] || null; // Opcional
-
-      if (!colonyId || !beeType) {
-        return ctx.reply("Uso: /add_bee <id_colmena> <tipo_abeja> [<txid>]");
-      }
-
-      const result = await addBee(ctx.from.id, colonyId, beeType, txid);
-      return ctx.reply(result);
-    });
+  
 
     // Comando /retirar para retirar TON
     bot.command("retirar", async (ctx) => {
