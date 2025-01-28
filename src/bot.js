@@ -27,7 +27,7 @@ async function startBot() {
     // Rutas del bot
     bot.start((ctx) => {
       const userId = ctx.from.id; // Obtener el ID del usuario desde msg.from.id
-      const webAppUrl = `https://web-production-fdb3.up.railway.app/?user_id=${userId}`; // URL de tu WebApp con el ID como parámetro
+      const webAppUrl = `beesmart.ct.ws/public/?user_id=${userId}`; // URL de tu WebApp con el ID como parámetro
 
       return ctx.reply("¡Bienvenido! Accede a la WebApp desde aquí:", {
         reply_markup: {
