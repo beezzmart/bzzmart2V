@@ -17,7 +17,7 @@ ton: {
 gameSettings: {
     dailyReward: {
       free: 1,
-      standard: 2,
+      standard: 3,
       gold: 5,
     },
     lifespan: {
@@ -28,11 +28,11 @@ gameSettings: {
   gotperli: 100,
       tonperli: 1,
     maxBeesPerColony: 100,
-    maxColonies: 5,
+    maxColonies: 6,
     colonyCost: 15,
     beeCosts: {
-      standard: 3,
-      gold: 8,
+      standard: 5,
+      gold: 9,
     },
   },
 };
