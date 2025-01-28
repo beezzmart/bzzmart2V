@@ -26,27 +26,25 @@ async function startBot() {
 
     // Rutas del bot
  bot.start((ctx) => {
-      const startParam = ctx.startPayload || ""; // Captura el parámetro start (si existe)
-      const userId = ctx.from.id; // Obtén el ID del usuario
-      
-      console.log("Start Param:", startParam); // Debug para ver el parámetro recibido
-      console.log("User ID:", userId);
+  const userId = ctx.from.id; // Obtén el ID del usuario
+  const startParam = ctx.startPayload || ""; // Obtén el payload si existe
 
-      if (startParam === "webapp") {
-        // Enlace a la web app con el user_id
-        const webAppUrl = `https://beesmart.ct.ws/public/?user_id=${userId}`;
-        return ctx.reply("¡Accede a la WebApp desde aquí!", {
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "Abrir WebApp", web_app: { url: webAppUrl } }],
-            ],
-          },
-        });
-      } else {
-        // Mensaje por defecto si no hay payload
-        return ctx.reply("¡Bienvenido! Te hemos obsequiado 1 colmena + 1 abeja free. Colecta gotas diarias y vende miel por litros.");
-      }
-    });
+  // Generar URL de la WebApp
+  const webAppUrl = `https://beesmart.ct.ws/public/?user_id=${userId}`;
+
+  // Enviar mensaje con el botón para abrir la WebApp
+  return ctx.reply(
+    "¡Bienvenido! Accede a tu WebApp desde el botón de abajo:",
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "Abrir WebApp", web_app: { url: webAppUrl } }],
+        ],
+      },
+    }
+  );
+});
+
 
 
     // Comando /collect para recolectar néctar
