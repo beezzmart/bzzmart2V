@@ -7,12 +7,11 @@ const router = express.Router();
 
 const https = require("https");
 
+// Keep-alive para Railway
 setInterval(() => {
   https.get("https://web-production-fdb3.up.railway.app/api/user_status");
   console.log("Keep-alive ping enviado");
 }, 5 * 60 * 1000); // Cada 5 minutos
-
-
 
 router.use(cors());
 router.use(express.json());
@@ -34,7 +33,6 @@ router.get("/user_status", async (req, res) => {
       "SELECT id, gotas FROM users WHERE telegram_id = ?",
       [telegramId],
     );
-    console.log("Resultado de la consulta de usuario:", user);
 
     if (user.length === 0) {
       return res
@@ -45,12 +43,12 @@ router.get("/user_status", async (req, res) => {
     const userId = user[0].id;
     const gotas = user[0].gotas;
 
-    console.log("Obteniendo colonias...");
+    // Obtener colonias del usuario
     const colonies = await query("SELECT id FROM colonies WHERE user_id = ?", [
       userId,
     ]);
 
-    console.log("Obteniendo abejas...");
+    // Obtener el total de abejas
     const bees = await query(
       "SELECT COUNT(*) as total FROM bees WHERE colony_id IN (SELECT id FROM colonies WHERE user_id = ?)",
       [userId],
@@ -71,6 +69,14 @@ router.get("/user_status", async (req, res) => {
       .status(500)
       .json({ success: false, error: "Error interno del servidor." });
   }
+});
+
+// Ruta: Configuración del juego (frontend puede acceder a estos valores)
+router.get("/game_config", (req, res) => {
+  res.json({
+    success: true,
+    config: gameSettings,
+  });
 });
 
 // Ruta: Recolectar néctar
@@ -137,16 +143,15 @@ router.post("/collect_nectar", async (req, res) => {
 
 // Ruta: Comprar abeja
 router.post("/add_bee", async (req, res) => {
-  const { id: telegramId, colonyId, beeType, txid } = req.body;
+  const { id: telegramId, colonyId, beeType, txid, quantity } = req.body;
 
-  if (!telegramId || !colonyId || !beeType) {
+  if (!telegramId || !colonyId || !beeType || !quantity) {
     return res
       .status(400)
       .json({ success: false, error: "Faltan datos necesarios." });
   }
 
   try {
-    // Verificar el usuario
     const user = await query("SELECT id FROM users WHERE telegram_id = ?", [
       telegramId,
     ]);
@@ -155,6 +160,7 @@ router.post("/add_bee", async (req, res) => {
         .status(404)
         .json({ success: false, error: "Usuario no encontrado." });
     }
+
     const userId = user[0].id;
 
     // Verificar la colmena
@@ -176,7 +182,6 @@ router.post("/add_bee", async (req, res) => {
         .json({ success: false, error: "Tipo de abeja no válido." });
     }
 
-    // Restricción: Solo 1 abeja free por usuario
     if (beeType === "free") {
       const freeBeeCount = await query(
         "SELECT COUNT(*) as total FROM bees WHERE type = 'free' AND colony_id IN (SELECT id FROM colonies WHERE user_id = ?)",
@@ -190,11 +195,12 @@ router.post("/add_bee", async (req, res) => {
       }
     }
 
-    // Si la abeja no es `free`, validar el `txid`
+    // Si la abeja no es free, validar el `txid` y costo total
+    const totalCost = beeCost * quantity;
     if (beeType !== "free") {
       const transactionValid = await verifyTONTransaction(
         txid,
-        beeCost,
+        totalCost,
         telegramId,
       );
       if (!transactionValid) {
@@ -205,18 +211,24 @@ router.post("/add_bee", async (req, res) => {
       }
     }
 
-    // Agregar la abeja a la colmena
+    // Agregar las abejas a la colmena
+    const beeInserts = Array(quantity).fill([
+      colonyId,
+      beeType,
+      new Date(),
+    ]);
+
     await query(
-      "INSERT INTO bees (colony_id, type, birth_date) VALUES (?, ?, ?)",
-      [colonyId, beeType, new Date()],
+      "INSERT INTO bees (colony_id, type, birth_date) VALUES ?",
+      [beeInserts],
     );
 
     res.json({
       success: true,
-      message: `¡Abeja ${beeType} añadida a la colmena ${colonyId}!`,
+      message: `${quantity} abeja(s) ${beeType} añadida(s) a la colmena ${colonyId}.`,
     });
   } catch (error) {
-    console.error("Error al agregar abeja:", error);
+    console.error("Error al agregar abejas:", error);
     res
       .status(500)
       .json({ success: false, error: "Error interno del servidor." });
@@ -234,7 +246,6 @@ router.post("/buy_colony", async (req, res) => {
   }
 
   try {
-    // Verificar el usuario
     const user = await query("SELECT id FROM users WHERE telegram_id = ?", [
       telegramId,
     ]);
@@ -247,13 +258,8 @@ router.post("/buy_colony", async (req, res) => {
 
     const userId = user[0].id;
 
-    // Verificar la transacción TON
     const colonyCost = gameSettings.colonyCost;
-    const transactionValid = await verifyTONTransaction(
-      txid,
-      colonyCost,
-      telegramId,
-    );
+    const transactionValid = await verifyTONTransaction(txid, colonyCost, telegramId);
 
     if (!transactionValid) {
       return res.json({
@@ -262,7 +268,6 @@ router.post("/buy_colony", async (req, res) => {
       });
     }
 
-    // Agregar una nueva colmena
     await query("INSERT INTO colonies (user_id, colony_name) VALUES (?, ?)", [
       userId,
       `Colmena #${Date.now()}`,
