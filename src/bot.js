@@ -26,22 +26,27 @@ async function startBot() {
 
     // Rutas del bot
  bot.start((ctx) => {
-  const startParam = ctx.startPayload || ""; // Captura el parámetro start (si existe)
-  const userId = ctx.from.id; // Obtén el ID del usuario
-  
-  if (startParam === "webapp") {
-    const webAppUrl = `https://beesmart.ct.ws/public/?user_id=${userId}`;
-    return ctx.reply("¡Accede a la WebApp desde aquí!", {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: "Abrir WebApp", web_app: { url: webAppUrl } }],
-        ],
-      },
+      const startParam = ctx.startPayload || ""; // Captura el parámetro start (si existe)
+      const userId = ctx.from.id; // Obtén el ID del usuario
+      
+      console.log("Start Param:", startParam); // Debug para ver el parámetro recibido
+      console.log("User ID:", userId);
+
+      if (startParam === "webapp") {
+        // Enlace a la web app con el user_id
+        const webAppUrl = `https://beesmart.ct.ws/public/?user_id=${userId}`;
+        return ctx.reply("¡Accede a la WebApp desde aquí!", {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "Abrir WebApp", web_app: { url: webAppUrl } }],
+            ],
+          },
+        });
+      } else {
+        // Mensaje por defecto si no hay payload
+        return ctx.reply("¡Bienvenido! Te hemos obsequiado 1 colmena + 1 abeja free. Colecta gotas diarias y vende miel por litros.");
+      }
     });
-  } else {
-    return ctx.reply("¡Bienvenido! Te hemos obsequiado 1 colmena + 1 abeja free. Colecta gotas diarias y vende miel por litros.");
-  }
-});
 
 
     // Comando /collect para recolectar néctar
