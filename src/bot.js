@@ -25,12 +25,11 @@ async function startBot() {
     console.log("📦 Conexión a la base de datos establecida.");
 
     // Rutas del bot
-    bot.start((ctx) => {
-  const startParam = ctx.startPayload; // Captura el parámetro `start` de la URL
-  const userId = ctx.from.id; // Obtén el user_id del usuario
-
+ bot.start((ctx) => {
+  const startParam = ctx.startPayload || ""; // Captura el parámetro start (si existe)
+  const userId = ctx.from.id; // Obtén el ID del usuario
+  
   if (startParam === "webapp") {
-    // Genera la URL dinámica para la WebApp
     const webAppUrl = `https://beesmart.ct.ws/public/?user_id=${userId}`;
     return ctx.reply("¡Accede a la WebApp desde aquí!", {
       reply_markup: {
@@ -39,8 +38,11 @@ async function startBot() {
         ],
       },
     });
-  } 
+  } else {
+    return ctx.reply("¡Bienvenido! Te hemos obsequiado 1 colmena + 1 abeja free. Colecta gotas diarias y vende miel por litros.");
+  }
 });
+
 
     // Comando /collect para recolectar néctar
     bot.command("collect", async (ctx) => {
