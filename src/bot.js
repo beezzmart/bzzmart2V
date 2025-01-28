@@ -25,16 +25,28 @@ async function startBot() {
     console.log("📦 Conexión a la base de datos establecida.");
 
     // Rutas del bot
- bot.start((ctx) => {
-  const userId = ctx.from.id; // Obtén el ID del usuario
-  const startParam = ctx.startPayload || ""; // Obtén el payload si existe
+// Manejar el comando /start
+bot.start((ctx) => {
+  const userId = ctx.from.id; // ID del usuario
+  const startParam = ctx.startPayload || ""; // Captura el parámetro "start"
 
-  // Generar URL de la WebApp
+  // Generar la URL de la WebApp con el user_id
   const webAppUrl = `https://beesmart.ct.ws/public/?user_id=${userId}`;
 
-  // Enviar mensaje con el botón para abrir la WebApp
+  // Si el parámetro "start" es "webapp"
+  if (startParam === "webapp") {
+    return ctx.reply("¡Accede a la WebApp desde aquí!", {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "Abrir WebApp", web_app: { url: webAppUrl } }],
+        ],
+      },
+    });
+  }
+
+  // Mensaje general para otros casos
   return ctx.reply(
-    "¡Bienvenido! Accede a tu WebApp desde el botón de abajo:",
+    "¡Bienvenido! Usa el botón de abajo para acceder a la WebApp y gestionar tu colmena:",
     {
       reply_markup: {
         inline_keyboard: [
@@ -44,6 +56,7 @@ async function startBot() {
     }
   );
 });
+
 
 
 
