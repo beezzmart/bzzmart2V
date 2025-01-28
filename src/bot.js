@@ -26,22 +26,22 @@ async function startBot() {
 
     // Rutas del bot
     bot.start((ctx) => {
-      const userId = ctx.from.id; // Obtener el ID del usuario desde msg.from.id
-      const webAppUrl = `https://beesmart.ct.ws/public/?user_id=${userId}`; // URL de tu WebApp con el ID como parámetro
+  const startParam = ctx.startPayload; // Captura el parámetro `start` de la URL
+  const userId = ctx.from.id; // Obtén el user_id del usuario
 
-      return ctx.reply("¡Bienvenido! Accede a la WebApp desde aquí:", {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "Abrir WebApp",
-                web_app: { url: webAppUrl }, // URL con el user_id incluido
-              },
-            ],
-          ],
-        },
-      });
+  if (startParam === "webapp") {
+    // Genera la URL dinámica para la WebApp
+    const webAppUrl = `https://beesmart.ct.ws/public/?user_id=${userId}`;
+    return ctx.reply("¡Accede a la WebApp desde aquí!", {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "Abrir WebApp", web_app: { url: webAppUrl } }],
+        ],
+      },
     });
+  } 
+});
+
     // Comando /collect para recolectar néctar
     bot.command("collect", async (ctx) => {
       const result = await collectNectar(ctx.from.id);
