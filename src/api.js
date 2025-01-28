@@ -4,6 +4,12 @@ const { query } = require("./db");
 const { gameSettings } = require("./config");
 const { verifyTONTransaction } = require("./ton"); // Verifica transacciones TON.
 const router = express.Router();
+const http = require("http");
+
+setInterval(() => {
+  http.get("https://web-production-fdb3.up.railway.app/api/user_status");
+  console.log("Keep-alive ping enviado");
+}, 5 * 60 * 1000); // Cada 5 minutos
 
 router.use(cors());
 router.use(express.json());
