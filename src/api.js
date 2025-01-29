@@ -235,53 +235,56 @@ router.post("/add_bee", async (req, res) => {
   }
 });
 
-// Ruta: Comprar colmena
+// 📌 Ruta: Comprar colmena
 router.post("/buy_colony", async (req, res) => {
-  const { id: telegramId, txid } = req.body;
+  const { id: telegramId, colonyType, txid } = req.body;
 
-  if (!telegramId || !txid) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Faltan datos necesarios." });
+  if (!telegramId || !txid || !colonyType) {
+    return res.status(400).json({ success: false, error: "Faltan datos necesarios." });
   }
 
   try {
-    const user = await query("SELECT id FROM users WHERE telegram_id = ?", [
-      telegramId,
-    ]);
+    // Verificar el usuario
+    const user = await query("SELECT id FROM users WHERE telegram_id = ?", [telegramId]);
 
     if (user.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Usuario no encontrado." });
+      return res.status(404).json({ success: false, error: "Usuario no encontrado." });
     }
 
     const userId = user[0].id;
 
-    const colonyCost = gameSettings.colonyCost;
+    // Contar el número de colmenas que tiene el usuario
+    const userColonies = await query("SELECT COUNT(*) as total FROM colonies WHERE user_id = ?", [userId]);
+
+    if (userColonies[0].total >= gameSettings.maxColonies) {
+      return res.status(400).json({ success: false, error: "Has alcanzado el límite de 6 colmenas." });
+    }
+
+    // Determinar el costo de la colmena desde `config.js`
+    const colonyCosts = gameSettings.colonyCost;
+
+    if (!(colonyType in colonyCosts)) {
+      return res.status(400).json({ success: false, error: "Tipo de colmena no válido." });
+    }
+
+    const colonyCost = colonyCosts[colonyType];
+
+    // Verificar la transacción TON
     const transactionValid = await verifyTONTransaction(txid, colonyCost, telegramId);
 
     if (!transactionValid) {
-      return res.json({
-        success: false,
-        error: "Transacción no válida o no encontrada.",
-      });
+      return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada." });
     }
 
-    await query("INSERT INTO colonies (user_id, colony_name) VALUES (?, ?)", [
-      userId,
-      `Colmena #${Date.now()}`,
-    ]);
+    // Agregar la colmena a la base de datos
+    await query("INSERT INTO colonies (user_id, colony_name) VALUES (?, ?)", [userId, `Colmena ${colonyType}`]);
 
-    res.json({ success: true, message: "Colmena comprada con éxito." });
+    res.json({ success: true, message: "✅ Colmena comprada con éxito." });
   } catch (error) {
     console.error("Error al comprar colmena:", error);
-    res
-      .status(500)
-      .json({ success: false, error: "Error interno del servidor." });
+    res.status(500).json({ success: false, error: "Error interno del servidor." });
   }
 });
-
 // Ruta: Retirar TON
 router.post("/withdraw", async (req, res) => {
   const { id: telegramId, litros, wallet } = req.body;
