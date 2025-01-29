@@ -49,16 +49,6 @@ bot.start((ctx) => {
 
 
 
-
-    // Comando /collect para recolectar néctar
-    bot.command("collect", async (ctx) => {
-      const result = await collectNectar(ctx.from.id);
-      return ctx.reply(result);
-    });
-
-  
-
-
     // Iniciar el bot
     bot.launch();
     console.log("🤖 Bot de Telegram en funcionamiento.");
