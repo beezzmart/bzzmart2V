@@ -84,27 +84,23 @@ router.post("/collect_nectar", async (req, res) => {
   const telegramId = req.body.id;
 
   if (!telegramId) {
-    return res
-      .status(400)
-      .json({ success: false, error: "ID de usuario no proporcionado." });
+    return res.status(400).json({ success: false, error: "ID de usuario no proporcionado." });
   }
 
   try {
     const user = await query(
       "SELECT id, last_collected FROM users WHERE telegram_id = ?",
-      [telegramId],
+      [telegramId]
     );
 
     if (user.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Usuario no encontrado." });
+      return res.status(404).json({ success: false, error: "Usuario no encontrado." });
     }
 
     const userId = user[0].id;
     const lastCollected = user[0].last_collected;
 
-    // Verificar las 24 horas
+    // Verificar las 24 horas antes de recolectar
     const now = new Date();
     const lastCollectedDate = lastCollected ? new Date(lastCollected) : null;
 
@@ -115,10 +111,10 @@ router.post("/collect_nectar", async (req, res) => {
       });
     }
 
-    // Calcular la producción diaria
+    // Calcular la producción diaria de gotas según las abejas del usuario
     const bees = await query(
       "SELECT type FROM bees WHERE colony_id IN (SELECT id FROM colonies WHERE user_id = ?)",
-      [userId],
+      [userId]
     );
 
     let totalProduction = 0;
@@ -126,20 +122,22 @@ router.post("/collect_nectar", async (req, res) => {
       totalProduction += gameSettings.dailyReward[bee.type] || 0;
     });
 
-    // Actualizar las gotas y la última fecha de recolección
+    // Formatear la fecha actual en `YYYY-MM-DD HH:MM`
+    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+    // Actualizar las gotas y la última fecha de recolección en la base de datos
     await query(
       "UPDATE users SET gotas = gotas + ?, last_collected = ? WHERE id = ?",
-      [totalProduction, now, userId],
+      [totalProduction, formattedDate, userId]
     );
 
-    res.json({ success: true, gotas: totalProduction });
+    res.json({ success: true, gotas: totalProduction, lastCollected: formattedDate });
   } catch (error) {
     console.error("Error al recolectar néctar:", error);
-    res
-      .status(500)
-      .json({ success: false, error: "Error interno del servidor." });
+    res.status(500).json({ success: false, error: "Error interno del servidor." });
   }
 });
+
 
 // Ruta: Comprar abeja
 router.post("/add_bee", async (req, res) => {
