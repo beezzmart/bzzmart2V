@@ -56,14 +56,7 @@ bot.start((ctx) => {
       return ctx.reply(result);
     });
 
-    // Comando /buy_colony para comprar una colmena
-    bot.command("buy_colony", async (ctx) => {
-      const args = ctx.message.text.split(" ").slice(1); // /buy_colony [<txid>]
-      const txid = args[0] || null;
-
-      const result = await buyColony(ctx.from.id, txid);
-      return ctx.reply(result);
-    });
+  
 
 
     // Iniciar el bot
