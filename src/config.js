@@ -35,6 +35,7 @@ gameSettings: {
       oro: 25,
       diamante: 30,
       rubi: 40,
+    },
     beeCosts: {
       standard: 5,
       gold: 9,
