@@ -79,6 +79,7 @@ router.get("/game_config", (req, res) => {
   });
 });
 
+
 // Ruta: Recolectar néctar
 router.post("/collect_nectar", async (req, res) => {
   const telegramId = req.body.id;
@@ -122,8 +123,16 @@ router.post("/collect_nectar", async (req, res) => {
       totalProduction += gameSettings.dailyReward[bee.type] || 0;
     });
 
-    // Formatear la fecha actual en `YYYY-MM-DD HH:MM`
-    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    // Obtener hora en formato 12 horas con AM/PM
+    function formatDateTo12Hour(date) {
+      const hours = date.getHours();
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      const formattedHours = hours % 12 || 12; // Convierte 0 en 12 para formato 12 horas
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${formattedHours}:${minutes} ${ampm}`;
+    }
+
+    const formattedDate = formatDateTo12Hour(now);
 
     // Actualizar las gotas y la última fecha de recolección en la base de datos
     await query(
@@ -137,6 +146,7 @@ router.post("/collect_nectar", async (req, res) => {
     res.status(500).json({ success: false, error: "Error interno del servidor." });
   }
 });
+
 
 
 // Ruta: Comprar abeja
