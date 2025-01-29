@@ -65,33 +65,6 @@ bot.start((ctx) => {
       return ctx.reply(result);
     });
 
-    // Comando /add_bee para agregar una abeja a una colmena
-  
-
-    // Comando /retirar para retirar TON
-    bot.command("retirar", async (ctx) => {
-      const args = ctx.message.text.split(" ").slice(1); // Extraer argumentos
-      const litros = parseFloat(args[0]); // La cantidad en litros es el primer argumento
-      const walletAddress = args[1]; // La dirección TON es el segundo argumento
-
-      if (!litros || !walletAddress) {
-        return ctx.reply("Uso: /retirar <litros> <dirección TON>");
-      }
-
-      const result = await retirarTon(ctx.from.id, litros, walletAddress);
-      return ctx.reply(result);
-    });
-
-    // Comando /testdb para probar conexión a la base de datos
-    bot.command("testdb", async (ctx) => {
-      try {
-        const result = await query("SELECT 1");
-        return ctx.reply("✅ Conexión a la base de datos exitosa.");
-      } catch (error) {
-        console.error("❌ Error en la prueba de base de datos:", error);
-        return ctx.reply("❌ Error al conectar a la base de datos.");
-      }
-    });
 
     // Iniciar el bot
     bot.launch();
