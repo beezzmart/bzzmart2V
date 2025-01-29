@@ -29,7 +29,12 @@ gameSettings: {
       tonperli: 1,
     maxBeesPerColony: 100,
     maxColonies: 6,
-    colonyCost: 15,
+    colonyCost: {
+      basica: 15,
+      estandar: 20,
+      oro: 25,
+      diamante: 30,
+      rubi: 40,
     beeCosts: {
       standard: 5,
       gold: 9,
