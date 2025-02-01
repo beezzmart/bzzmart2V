@@ -56,4 +56,5 @@ async function updateDatabaseStructure() {
 }
 
 
-module.exports = { connectDB, query };
+
+module.exports = { connectDB, query, updateDatabaseStructure  };
