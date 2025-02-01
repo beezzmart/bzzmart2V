@@ -46,4 +46,14 @@ async function query(sql, params = []) {
   }
 }
 
+async function updateDatabaseStructure() {
+  try {
+    await query("ALTER TABLE users MODIFY last_collected DATETIME NULL;");
+    console.log("✅ Estructura de la base de datos actualizada correctamente.");
+  } catch (error) {
+    console.error("❌ Error al actualizar la estructura de la base de datos:", error);
+  }
+}
+
+
 module.exports = { connectDB, query };
