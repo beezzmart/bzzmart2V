@@ -4,7 +4,7 @@ const { query } = require("./db");
 const { gameSettings } = require("./config");
 const { verifyTONTransaction } = require("./ton"); // Verifica transacciones TON.
 const router = express.Router();
-const { updateDatabaseStructure } = require('./db');  // Asegúrate de que la ruta sea correcta según tu estructura de carpetas
+
 const https = require("https");
 
 // Keep-alive para Railway
@@ -15,7 +15,7 @@ setInterval(() => {
 
 router.use(cors());
 router.use(express.json());
-updateDatabaseStructure();
+
 
 // Ruta: Obtener el estado del usuario
 router.get("/user_status", async (req, res) => {
