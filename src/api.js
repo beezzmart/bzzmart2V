@@ -21,53 +21,44 @@ router.get("/user_status", async (req, res) => {
   const telegramId = req.query.id;
 
   if (!telegramId) {
-    return res
-      .status(400)
-      .json({ success: false, error: "ID de usuario no proporcionado." });
+    return res.status(400).json({ success: false, error: "ID de usuario no proporcionado." });
   }
 
   try {
     console.log("Obteniendo datos del usuario con ID:", telegramId);
 
-    const user = await query(
-      "SELECT id, gotas FROM users WHERE telegram_id = ?",
-      [telegramId],
-    );
+    const user = await query("SELECT id, gotas, last_collected FROM users WHERE telegram_id = ?", [telegramId]);
 
     if (user.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Usuario no encontrado." });
+      return res.status(404).json({ success: false, error: "Usuario no encontrado." });
     }
 
     const userId = user[0].id;
     const gotas = user[0].gotas;
+    const lastCollected = user[0].last_collected;
 
-    // Obtener colonias del usuario
-    const colonies = await query("SELECT id FROM colonies WHERE user_id = ?", [
-      userId,
-    ]);
-
-    // Obtener el total de abejas
-    const bees = await query(
-      "SELECT COUNT(*) as total FROM bees WHERE colony_id IN (SELECT id FROM colonies WHERE user_id = ?)",
-      [userId],
+    // Obtener colonias del usuario con información adicional
+    const colonies = await query(
+      "SELECT id, colony_name AS nombre, creation_date AS fecha_creacion FROM colonies WHERE user_id = ?",
+      [userId]
     );
 
-    // Crear un array con los IDs de las colonias
-    const colonyIds = colonies.map((colony) => colony.id);
+    // Obtener el total de abejas por cada colmena
+    for (let colmena of colonies) {
+      const beeCount = await query("SELECT COUNT(*) as total FROM bees WHERE colony_id = ?", [colmena.id]);
+      colmena.total_abejas = beeCount[0].total;
+      colmena.bloqueada = false; // Todas las colmenas en la base de datos están desbloqueadas
+    }
 
     res.json({
       success: true,
       gotas,
-      colonias: colonyIds, // Devolver los IDs en lugar de solo un conteo
-      abejas: bees[0].total,
+      last_collected: lastCollected,
+      colonias: colonies, // Enviar la información completa de cada colmena
     });
   } catch (error) {
     console.error("Error al obtener el estado del usuario:", error);
-    res
-      .status(500)
-      .json({ success: false, error: "Error interno del servidor." });
+    res.status(500).json({ success: false, error: "Error interno del servidor." });
   }
 });
 
