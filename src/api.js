@@ -98,6 +98,7 @@ router.post("/collect_nectar", async (req, res) => {
 
     const userId = user[0].id;
     const lastCollected = user[0].last_collected;
+   
 
     // Verificar las 24 horas antes de recolectar
     const now = new Date();
@@ -122,7 +123,8 @@ router.post("/collect_nectar", async (req, res) => {
     });
 
     // Formatear la fecha actual en `YYYY-MM-DD HH:MM`
-    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+   const formattedDate = now.toISOString().slice(0, 19).replace("T", " ");
+    await query("UPDATE users SET gotas = gotas + ?, last_collected = ? WHERE id = ?", [totalProduction, formattedDate, userId]);
 
     // Actualizar las gotas y la última fecha de recolección en la base de datos
     await query(
