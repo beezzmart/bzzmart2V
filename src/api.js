@@ -15,6 +15,7 @@ setInterval(() => {
 
 router.use(cors());
 router.use(express.json());
+updateDatabaseStructure();
 
 // Ruta: Obtener el estado del usuario
 router.get("/user_status", async (req, res) => {
