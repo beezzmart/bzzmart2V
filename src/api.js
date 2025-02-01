@@ -39,7 +39,7 @@ router.get("/user_status", async (req, res) => {
 
     // Obtener colonias del usuario con información adicional
     const colonies = await query(
-      "SELECT id, colony_name AS nombre, creation_date AS fecha_creacion FROM colonies WHERE user_id = ?",
+      "SELECT id, colony_name AS nombre, created_at AS fecha_creacion FROM colonies WHERE user_id = ?",
       [userId]
     );
 
