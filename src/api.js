@@ -43,6 +43,9 @@ router.get("/user_status", async (req, res) => {
       [userId]
     );
 
+    // Obtener solo los IDs de las colonias para la UI que solo los necesita
+    const colonyIds = colonies.map(colony => colony.id);
+
     // Obtener el total de abejas por cada colmena
     for (let colmena of colonies) {
       const beeCount = await query("SELECT COUNT(*) as total FROM bees WHERE colony_id = ?", [colmena.id]);
@@ -54,7 +57,8 @@ router.get("/user_status", async (req, res) => {
       success: true,
       gotas,
       last_collected: lastCollected,
-      colonias: colonies, // Enviar la información completa de cada colmena
+      colonias: colonyIds,  // Enviar solo los IDs para la parte del UI que lo usa así
+      colonias_info: colonies, // Enviar la información completa de cada colmena para el carousel
     });
   } catch (error) {
     console.error("Error al obtener el estado del usuario:", error);
