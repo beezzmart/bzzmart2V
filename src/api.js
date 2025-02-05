@@ -176,54 +176,37 @@ router.post("/add_bee", async (req, res) => {
         .json({ success: false, error: "Colmena no encontrada." });
     }
 
-    // Validar el tipo de abeja
+      const colonyName = colony[0].colony_name;
+    const maxBees = gameSettings.maxBeesPerColony[colonyName] || {};
+    const maxAllowed = maxBees[beeType] || 0;
+
+    // Verificar la cantidad actual de abejas de ese tipo en la colmena
+    const existingBees = await query("SELECT COUNT(*) as total FROM bees WHERE colony_id = ? AND type = ?", [colonyId, beeType]);
+
+    if (existingBees[0].total + quantity > maxAllowed) {
+      return res.status(400).json({
+        success: false,
+        error: `No puedes añadir más de ${maxAllowed} abejas ${beeType} en esta colmena.`,
+      });
+    }
+
+    // Validar el tipo de abeja y la transacción
     const beeCost = gameSettings.beeCosts[beeType];
-    if (!beeCost && beeType !== "free") {
-      return res
-        .status(400)
-        .json({ success: false, error: "Tipo de abeja no válido." });
+    if (!beeCost) {
+      return res.status(400).json({ success: false, error: "Tipo de abeja no válido." });
     }
 
-    if (beeType === "free") {
-      const freeBeeCount = await query(
-        "SELECT COUNT(*) as total FROM bees WHERE type = 'free' AND colony_id IN (SELECT id FROM colonies WHERE user_id = ?)",
-        [userId],
-      );
-      if (freeBeeCount[0].total > 0) {
-        return res.status(400).json({
-          success: false,
-          error: "Ya tienes una abeja free. No puedes añadir otra.",
-        });
-      }
-    }
-
-    // Si la abeja no es free, validar el `txid` y costo total
     const totalCost = beeCost * quantity;
-    if (beeType !== "free") {
-      const transactionValid = await verifyTONTransaction(
-        txid,
-        totalCost,
-        telegramId,
-      );
-      if (!transactionValid) {
-        return res.status(400).json({
-          success: false,
-          error: "Transacción no válida o no encontrada. Verifica el TXID.",
-        });
-      }
+    const transactionValid = await verifyTONTransaction(txid, totalCost, telegramId);
+
+    if (!transactionValid) {
+      return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada. Verifica el TXID." });
     }
 
     // Agregar las abejas a la colmena
-    const beeInserts = Array(quantity).fill([
-      colonyId,
-      beeType,
-      new Date(),
-    ]);
+    const beeInserts = Array(quantity).fill([colonyId, beeType, new Date()]);
 
-    await query(
-      "INSERT INTO bees (colony_id, type, birth_date) VALUES ?",
-      [beeInserts],
-    );
+    await query("INSERT INTO bees (colony_id, type, birth_date) VALUES ?", [beeInserts]);
 
     res.json({
       success: true,
@@ -231,9 +214,7 @@ router.post("/add_bee", async (req, res) => {
     });
   } catch (error) {
     console.error("Error al agregar abejas:", error);
-    res
-      .status(500)
-      .json({ success: false, error: "Error interno del servidor." });
+    res.status(500).json({ success: false, error: "Error interno del servidor." });
   }
 });
 
