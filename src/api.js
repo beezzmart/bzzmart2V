@@ -61,7 +61,7 @@ router.get("/user_status", async (req, res) => {
       gotas,
       last_collected: lastCollected,
       colonias: colonies.map(colony => colony.id),  // Mantiene la estructura original (solo los IDs)
-      colonias_info: colonies, // Información completa de cada colmena
+      colonias_info: colonies.length ? colonies : [], // Información completa de cada colmena
       abejas: bees[0].total, // Se mantiene la cuenta total de abejas
     });
   } catch (error) {
