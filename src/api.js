@@ -177,7 +177,7 @@ router.post("/add_bee", async (req, res) => {
 
     // Verificar la colmena
     const colony = await query(
-      "SELECT id FROM colonies WHERE id = ? AND user_id = ?",
+      "SELECT id, type FROM colonies WHERE id = ? AND user_id = ?",
       [colonyId, userId],
     );
     if (colony.length === 0) {
