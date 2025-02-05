@@ -176,19 +176,19 @@ router.post("/add_bee", async (req, res) => {
         .json({ success: false, error: "Colmena no encontrada." });
     }
 
-      const colonyName = colony[0].colony_name;
-    const maxBees = gameSettings.maxBeesPerColony[colonyName] || {};
-    const maxAllowed = maxBees[beeType] || 0;
 
-    // Verificar la cantidad actual de abejas de ese tipo en la colmena
-    const existingBees = await query("SELECT COUNT(*) as total FROM bees WHERE colony_id = ? AND type = ?", [colonyId, beeType]);
+const colonyType = colony[0].type; // Tipo de colmena
 
-    if (existingBees[0].total + quantity > maxAllowed) {
-      return res.status(400).json({
-        success: false,
-        error: `No puedes añadir más de ${maxAllowed} abejas ${beeType} en esta colmena.`,
-      });
-    }
+// Validar si la colmena puede recibir este tipo de abeja
+const allowedBees = gameSettings.maxBeesPerColony[colonyType] || {}; 
+const maxAllowed = allowedBees[beeType] || 0; // Cantidad máxima permitida
+
+// Contar cuántas abejas de este tipo hay en la colmena
+const beeCount = await query("SELECT COUNT(*) as total FROM bees WHERE colony_id = ? AND type = ?", [colonyId, beeType]);
+
+if (beeCount[0].total >= maxAllowed) {
+  return res.status(400).json({ success: false, error: `No puedes tener más de ${maxAllowed} abejas ${beeType} en esta colmena.` });
+}
 
     // Validar el tipo de abeja y la transacción
     const beeCost = gameSettings.beeCosts[beeType];
