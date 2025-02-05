@@ -25,26 +25,16 @@ gameSettings: {
       standard: 100,
       gold: 120,
     },
-  gotperli: 100,
-      tonperli: 1,
-  minwit: 1,
+    gotperli: 100,
+    tonperli: 1,
+    minwit: 1,
     maxBeesPerColony: {
       free: 1,
-      basica: {
-        standard:10,
-      },
-      estandar: {
-        standard:15,
-      },
-      oro: {
-        gold:20,
-      },
-      diamante:  {
-        gold:25,
-      },
-      rubi:  {
-        gold:30,
-      },
+      basica: { standard: 10 },
+      estandar: { standard: 15 },
+      oro: { gold: 20 },
+      diamante: { gold: 25 },
+      rubi: { gold: 30 },
     },
     maxColonies: 6,
     colonyCost: {
