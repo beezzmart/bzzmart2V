@@ -196,6 +196,14 @@ const maxAllowed = allowedBees[beeType] || 0; // Cantidad máxima permitida
 // Contar cuántas abejas de este tipo hay en la colmena
 const beeCount = await query("SELECT COUNT(*) as total FROM bees WHERE colony_id = ? AND type = ?", [colonyId, beeType]);
 
+
+    if (!allowedBees.hasOwnProperty(beeType)) {
+  return res.status(400).json({ 
+    success: false, 
+    error: `No puedes agregar abejas ${beeType} en una colmena ${colonyType}. Solo se permiten: ${Object.keys(allowedBees).join(", ")}.` 
+  });
+}
+
 if (beeCount[0].total >= maxAllowed) {
   return res.status(400).json({ success: false, error: `No puedes tener más de ${maxAllowed} abejas ${beeType} en esta colmena.` });
 }
