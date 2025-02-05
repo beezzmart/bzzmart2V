@@ -39,16 +39,18 @@ router.get("/user_status", async (req, res) => {
     const lastCollected = user[0].last_collected;
 
     // Obtener colonias del usuario con información adicional
-    const colonies = await query(
-      "SELECT id, colony_name AS nombre, created_at AS fecha_creacion FROM colonies WHERE user_id = ?",
+ const colonies = await query(
+      "SELECT id, colony_name AS nombre, created_at AS fecha_creacion, type FROM colonies WHERE user_id = ?",
       [userId]
     );
 
-    // Obtener el total de abejas por cada colmena
+    // Obtener el total de abejas por cada colmena y el tipo
     for (let colmena of colonies) {
-      const beeCount = await query("SELECT COUNT(*) as total FROM bees WHERE colony_id = ?", [colmena.id]);
-      colmena.total_abejas = beeCount[0].total;
+      const beeCount = await query("SELECT COUNT(*) as total, type FROM bees WHERE colony_id = ?", [colmena.id]);
+      colmena.total_abejas = beeCount[0]?.total || 0;
+      colmena.tipo_abejas = beeCount[0]?.type || "Ninguna";
     }
+
 
     // Obtener la cantidad total de abejas del usuario
     const bees = await query(
@@ -61,7 +63,7 @@ router.get("/user_status", async (req, res) => {
       gotas,
       last_collected: lastCollected,
       colonias: colonies.map(colony => colony.id),  // Mantiene la estructura original (solo los IDs)
-      colonias_info: colonies.length ? colonies : [], // Información completa de cada colmena
+      colonias_info: colonies, // Información completa de cada colmena
       abejas: bees[0].total, // Se mantiene la cuenta total de abejas
     });
   } catch (error) {
