@@ -300,10 +300,10 @@ router.post("/withdraw", async (req, res) => {
   try {
     const gotasNecesarias = litros * gameSettings.gotperli;
 
-    if (litros < 2) {
+    if (litros < gameSettings.minwit) {
       return res.status(400).json({
         success: false,
-        error: `El monto mínimo para retirar es 2 litros (${gameSettings.gotperli * 2} gotas).`,
+        error: `El monto mínimo para retirar es 1 litro (${gameSettings.gotperli * gameSettings.minwit} gotas).`,
       });
     }
 
