@@ -44,12 +44,20 @@ router.get("/user_status", async (req, res) => {
       [userId]
     );
 
-    // Obtener el total de abejas por cada colmena y el tipo
-    for (let colmena of colonies) {
-      const beeCount = await query("SELECT COUNT(*) as total, type FROM bees WHERE colony_id = ?", [colmena.id]);
-      colmena.total_abejas = beeCount[0]?.total || 0;
-      colmena.tipo_abejas = beeCount[0]?.type || "Ninguna";
-    }
+ // Obtener el total de abejas por tipo en cada colmena
+for (let colmena of colonies) {
+    const beeCounts = await query("SELECT COUNT(*) as total, type FROM bees WHERE colony_id = ? GROUP BY type", [colmena.id]);
+
+    // Convertir el resultado en un objeto { tipo: cantidad }
+    colmena.abejas_por_tipo = {};
+    beeCounts.forEach(bee => {
+        colmena.abejas_por_tipo[bee.type] = bee.total;
+    });
+
+    // También guardar el total de abejas
+    colmena.total_abejas = beeCounts.reduce((sum, bee) => sum + bee.total, 0);
+}
+
 
 
     // Obtener la cantidad total de abejas del usuario
