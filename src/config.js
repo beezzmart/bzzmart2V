@@ -30,11 +30,21 @@ gameSettings: {
   minwit: 1,
     maxBeesPerColony: {
       free: 1,
-      basica: 10,
-      estandar: 15,
-      oro: 20,
-      diamante: 25,
-      rubi: 30,
+      basica: {
+        standard:10,
+      },
+      estandar: {
+        standard:15,
+      },
+      oro: {
+        gold:20,
+      },
+      diamante:  {
+        gold:25,
+      },
+      rubi:  {
+        gold:30,
+      },
     },
     maxColonies: 6,
     colonyCost: {
