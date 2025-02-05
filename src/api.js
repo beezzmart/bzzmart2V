@@ -193,6 +193,14 @@ const colonyType = colony[0].type; // Tipo de colmena
 const allowedBees = gameSettings.maxBeesPerColony[colonyType] || {}; 
 const maxAllowed = allowedBees[beeType] || 0; // Cantidad máxima permitida
 
+    // ❌ Bloquear cualquier intento de agregar abejas a la colmena inicial (free)
+if (colonyType === "free") {
+  return res.status(400).json({ 
+    success: false, 
+    error: "No puedes agregar abejas a esta colmena. Está reservada solo para la abeja Free." 
+  });
+}
+
 // Contar cuántas abejas de este tipo hay en la colmena
 const beeCount = await query("SELECT COUNT(*) as total FROM bees WHERE colony_id = ? AND type = ?", [colonyId, beeType]);
 
