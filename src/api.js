@@ -35,7 +35,7 @@ router.get("/user_status", async (req, res) => {
     }
 
     const userId = user[0].id;
-  //  const tutorialCompleted = user[0].tutorial === 1; // Si tutorial es 1, ya lo completó
+const tutorial = user[0].tutorial; // Agregar el estado del tutorial
     const gotas = user[0].gotas;
     const lastCollected = user[0].last_collected;
 
@@ -73,6 +73,7 @@ for (let colmena of colonies) {
       success: true,
       gotas,
       last_collected: lastCollected,
+         tutorial, //  Ahora enviamos la info del tutorial
       colonias: colonies.map(colony => colony.id),  // Mantiene la estructura original (solo los IDs)
       colonias_info: Array.isArray(colonies) ? colonies : [], // Información completa de cada colmena
       abejas: bees[0].total, // Se mantiene la cuenta total de abejas
