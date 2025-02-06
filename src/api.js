@@ -28,13 +28,14 @@ router.get("/user_status", async (req, res) => {
   try {
     console.log("Obteniendo datos del usuario con ID:", telegramId);
 
-    const user = await query("SELECT id, gotas, last_collected FROM users WHERE telegram_id = ?", [telegramId]);
+    const user = await query("SELECT id, gotas, last_collected, tutorial FROM users WHERE telegram_id = ?", [telegramId]);
 
     if (user.length === 0) {
       return res.status(404).json({ success: false, error: "Usuario no encontrado." });
     }
 
     const userId = user[0].id;
+  //  const tutorialCompleted = user[0].tutorial === 1; // Si tutorial es 1, ya lo completó
     const gotas = user[0].gotas;
     const lastCollected = user[0].last_collected;
 
@@ -65,6 +66,8 @@ for (let colmena of colonies) {
       "SELECT COUNT(*) as total FROM bees WHERE colony_id IN (SELECT id FROM colonies WHERE user_id = ?)",
       [userId]
     );
+     
+
     
     res.json({
       success: true,
@@ -73,6 +76,7 @@ for (let colmena of colonies) {
       colonias: colonies.map(colony => colony.id),  // Mantiene la estructura original (solo los IDs)
       colonias_info: Array.isArray(colonies) ? colonies : [], // Información completa de cada colmena
       abejas: bees[0].total, // Se mantiene la cuenta total de abejas
+     
     });
   } catch (error) {
     console.error("Error al obtener el estado del usuario:", error);
@@ -354,6 +358,32 @@ router.post("/withdraw", async (req, res) => {
     res
       .status(500)
       .json({ success: false, error: "Error interno del servidor." });
+  }
+});
+
+// Ruta: Marcar el tutorial como completado
+router.post("/update_tutorial", async (req, res) => {
+  const { id: telegramId } = req.body;
+
+  if (!telegramId) {
+    return res.status(400).json({ success: false, error: "ID de usuario no proporcionado." });
+  }
+
+  try {
+    const user = await query("SELECT id FROM users WHERE telegram_id = ?", [telegramId]);
+
+    if (user.length === 0) {
+      return res.status(404).json({ success: false, error: "Usuario no encontrado." });
+    }
+
+    const userId = user[0].id;
+
+    await query("UPDATE users SET tutorial = 1 WHERE id = ?", [userId]);
+
+    res.json({ success: true, message: "Tutorial completado." });
+  } catch (error) {
+    console.error("Error al actualizar tutorial:", error);
+    res.status(500).json({ success: false, error: "Error interno del servidor." });
   }
 });
 
