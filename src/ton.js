@@ -1,19 +1,16 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Convertir dirección TON Base64 → Hex sin errores
+// ✅ Convertir dirección TON Base64 → HEX correctamente
 function normalizeTONAddress(base64Address) {
+    if (!base64Address) return "";
     let hex = Buffer.from(base64Address, "base64").toString("hex").toLowerCase();
 
-    // 🔹 Si la dirección tiene prefijo "0:", lo quitamos
-    if (hex.length > 64) {
-        hex = hex.substring(hex.length - 64);
-    }
-
-    return hex;
+    // 🔹 Asegurar que sean solo los últimos 64 caracteres
+    return hex.length > 64 ? hex.slice(-64) : hex;
 }
 
-// ✅ Verificar transacción TON con comparación precisa
+// ✅ Verificar transacción en TON API con conversión exacta
 async function verifyTONTransaction(txid, expectedAmount, telegramId) {
     const apiUrl = `https://tonapi.io/v2/blockchain/accounts/${ton.publicAddress}/transactions?limit=50`;
 
@@ -39,16 +36,17 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             const txHash = tx.hash;
             const txAmount = parseInt(tx.in_msg?.value || tx.value || 0, 10); // Ya está en nanoTON
 
-            // 🔹 Convertir dirección destino de TON a HEX
-            let txDestination = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            txDestination = normalizeTONAddress(txDestination); // Normalizamos para comparar bien
+            // 🔹 Obtener dirección destino y convertirla a HEX
+            let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
+            let txDestination = normalizeTONAddress(txDestinationRaw); // Normalizamos para comparar bien
 
             console.log("🔍 Comparando:", {
                 txHash,
                 txAmount,
-                txDestination,
-                expectedAmount, // 🔹 Comparación directa con nanoTON
-                expectedAddressHex
+                txDestinationRaw,  // 🔹 Dirección original antes de normalizar
+                txDestination,      // 🔹 Dirección después de normalizar
+                expectedAmount,     // 🔹 Comparación exacta con nanoTON
+                expectedAddressHex  // 🔹 Dirección esperada en HEX
             });
 
             return (
