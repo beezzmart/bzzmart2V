@@ -1,72 +1,42 @@
-const TonWeb = require('tonweb');
-const { ton } = require('./config');
-const axios = require('axios');
+const axios = require("axios");
+const { ton } = require("./config");
 
-const tonweb = new TonWeb(new TonWeb.HttpProvider(ton.apiUrl));
-
-// Convierte la clave privada de hexadecimal a buffer
-const hexToBytes = (hex) => {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-  }
-  return bytes;
-};
-
-const privateKeyBuffer = hexToBytes(ton.privateKey);
-if (privateKeyBuffer.length !== 32) {
-  throw new Error('La clave privada debe tener exactamente 32 bytes.');
-}
-
-const keyPair = TonWeb.utils.keyPairFromSeed(privateKeyBuffer);
-
-const WalletClass = TonWeb.Wallets.all.v3R1;
-const wallet = new WalletClass(tonweb.provider, {
-  publicKey: keyPair.publicKey,
-  wc: 0,
-});
-
-// Enviar TON
-async function sendTON(toAddress, amount) {
-  try {
-    const amountNano = TonWeb.utils.toNano(amount.toString());
-    const seqno = await wallet.methods.seqno().call();
-    await wallet.methods.transfer({
-      secretKey: keyPair.secretKey,
-      toAddress: toAddress,
-      amount: amountNano,
-      seqno: seqno,
-      payload: null,
-      sendMode: 3,
-    }).send();
-    console.log(`💰 Enviado ${amount} TON a ${toAddress}`);
-    return { success: true };
-  } catch (error) {
-    console.error('❌ Error al enviar TON:', error);
-    return { success: false, error };
-  }
-}
-
-// Verificar una transacción TON
-async function verifyTONTransaction(txid, amount, telegramId) {
-  const apiUrl = `${ton.apiUrl}/getTransactions`;
-  const walletAddress = ton.publicAddress;
+// Verificar una transacción TON en Tonviewer
+async function verifyTONTransaction(txid, expectedAmount) {
+  const explorerUrl = `https://tonapi.io/v1/blockchain/transaction/${txid}`;
 
   try {
-    const response = await axios.post(apiUrl, {
-      account: walletAddress,
-    });
+    const response = await axios.get(explorerUrl);
+    const transaction = response.data;
 
-    const transactions = response.data.result;
-    const validTransaction = transactions.find(
-      (tx) => tx.transaction_id === txid && tx.value === amount
-    );
+    if (!transaction) {
+      console.error("❌ Transacción no encontrada en Tonviewer.");
+      return false;
+    }
 
-    return validTransaction !== undefined;
+    // Obtener datos de la transacción
+    const sender = transaction.in_msg.source.address; // Dirección del remitente
+    const receiver = transaction.in_msg.destination.address; // Dirección del receptor
+    const amount = parseFloat(transaction.in_msg.value) / 1e9; // Convertir de nanotons a TON
+
+    // Verificar que el receptor sea nuestra billetera
+    if (receiver !== ton.publicAddress) {
+      console.error("❌ La transacción no fue enviada a la billetera correcta.");
+      return false;
+    }
+
+    // Verificar que el monto coincida
+    if (amount < expectedAmount) {
+      console.error(`❌ Monto incorrecto: Se esperaban ${expectedAmount} TON pero recibió ${amount} TON.`);
+      return false;
+    }
+
+    console.log(`✅ Transacción válida: ${amount} TON recibidos de ${sender}.`);
+    return true;
   } catch (error) {
-    console.error('Error verificando transacción TON:', error.message);
+    console.error("❌ Error verificando transacción en Tonviewer:", error.message);
     return false;
   }
 }
 
-module.exports = { sendTON, verifyTONTransaction };
+module.exports = { verifyTONTransaction };
