@@ -1,30 +1,36 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// Verificar una transacción TON en Tonviewer
+// 🔍 Verificar una transacción TON en Tonviewer
 async function verifyTONTransaction(txid, expectedAmount, telegramId) {
-    const apiUrl = `https://tonapi.io/v1/blockchain/account/transactions?account=${ton.publicAddress}&limit=10`;
+    const apiUrl = `https://tonviewer.com/api/transaction/${txid}`;
 
     try {
         const response = await axios.get(apiUrl);
-        const transactions = response.data.transactions;
+        const txData = response.data;
 
-        console.log("📌 Verificando transacción...");
-        console.log("🔹 Wallet pública:", ton.publicAddress);
-        console.log("🔹 Transacciones recientes:", transactions);
+        // 📌 Verificar si la transacción es válida
+        if (!txData || !txData.in_msg) {
+            console.error("❌ Transacción no encontrada en Tonviewer.");
+            return false;
+        }
 
-        // Buscar la transacción por TXID
-        const validTransaction = transactions.find(tx =>
-            tx.utime && 
-            tx.transaction_id.hash === txid &&
-            parseFloat(tx.amount).toFixed(2) === (expectedAmount / 1e9).toFixed(2) && 
-            tx.account.address === ton.publicAddress // Verifica que la wallet destino es la correcta
-        );
+        // 🔹 Convertir el monto esperado a nanoTON (1 TON = 1e9 nanoTON)
+        const expectedNanoTON = BigInt(expectedAmount * 1e9);
+        const transactionNanoTON = BigInt(txData.in_msg.value || 0); 
 
-        console.log("🔍 Transacción encontrada:", validTransaction || "No encontrada");
-        return validTransaction !== undefined;
+        // 🔍 Verificar que la transacción cumple con:
+        // 1️⃣ El monto enviado es el correcto
+        // 2️⃣ La dirección de destino es nuestra wallet pública
+        if (transactionNanoTON === expectedNanoTON && txData.in_msg.destination === ton.publicAddress) {
+            console.log("✅ Transacción válida:", txid);
+            return true;
+        } else {
+            console.error("❌ La transacción no cumple con los requisitos.");
+            return false;
+        }
     } catch (error) {
-        console.error("❌ Error verificando transacción TON:", error.message);
+        console.error("❌ Error verificando transacción en Tonviewer:", error.message);
         return false;
     }
 }
