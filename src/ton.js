@@ -1,10 +1,10 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para limpiar la dirección TON a formato HEX correcto
+// ✅ Función para limpiar y normalizar direcciones TON
 function cleanTONAddress(address) {
     if (!address) return "";
-    return address.replace(/^0:/, "").toLowerCase(); // Elimina el prefijo "0:"
+    return address.replace(/^0:/, "").toLowerCase(); // 🔹 Elimina el prefijo "0:" y convierte a minúsculas
 }
 
 // ✅ Verificar transacción en TON API
@@ -24,7 +24,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         console.log("🔹 TXID ingresado:", txid);
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
-        // 🔹 Convertir dirección esperada a HEX (eliminar prefijo)
+        // 🔹 Convertir dirección esperada a HEX
         let expectedAddressHex = cleanTONAddress(ton.publicAddress);
         console.log("🔹 Dirección esperada (HEX):", expectedAddressHex);
 
@@ -33,7 +33,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             const txHash = tx.hash;
             const txAmount = parseInt(tx.in_msg?.value || tx.value || 0, 10);
 
-            // 🔹 Normalizar dirección destino
+            // 🔹 Normalizar dirección destino (eliminar "0:")
             let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
             let txDestination = cleanTONAddress(txDestinationRaw);
 
@@ -47,7 +47,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             });
 
             return (
-                txHash === txid &&            // ✅ TXID debe coincidir
+                txHash === txid &&             // ✅ TXID debe coincidir
                 txAmount === expectedAmount && // ✅ Monto en nanoTON debe coincidir
                 txDestination === expectedAddressHex // ✅ Dirección debe coincidir
             );
