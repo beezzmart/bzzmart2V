@@ -1,21 +1,18 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-
-// ✅ Función para limpiar la dirección (eliminar "0:" y convertir a minúsculas)
+// ✅ Función para limpiar la dirección HEX y asegurar formato correcto
 function cleanTONAddress(address) {
     if (!address) return "";
-    return address.replace(/^0:/, "").toLowerCase(); // 🔹 Elimina el prefijo "0:" y convierte a minúsculas
+    return address.replace(/^0:/, "").toLowerCase();
 }
 
-// ✅ Función para convertir Base64 a dirección HEX (SIN caracteres extra)
+// ✅ Función para convertir Base64 a dirección HEX con "0:" al inicio
 function convertBase64ToTONAddress(base64Address) {
     try {
         const buffer = Buffer.from(base64Address, "base64");
         const hexAddress = buffer.toString("hex").toLowerCase();
-
-        // 🔹 Extraer solo los 64 caracteres de la dirección (evita caracteres extra)
-        return `0:${hexAddress.slice(-64)}`; // ✅ Agregar "0:" al inicio
+        return `0:${hexAddress.slice(-64)}`;
     } catch (error) {
         console.error("❌ Error convirtiendo dirección Base64 a TON:", error.message);
         return "";
@@ -23,7 +20,7 @@ function convertBase64ToTONAddress(base64Address) {
 }
 
 // ✅ Verificar transacción en TON API
-async function verifyTONTransaction(txid, expectedAmount, telegramId) {
+async function verifyTONTransaction(txid, expectedAmountTON, telegramId) {
     const apiUrl = `https://tonapi.io/v2/blockchain/accounts/${ton.publicAddress}/transactions?limit=50`;
 
     try {
@@ -39,32 +36,35 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         console.log("🔹 TXID ingresado:", txid);
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
-        // ✅ Corregimos la dirección esperada (SIN caracteres extra)
-        let expectedAddressTON = cleanTONAddress(ton.publicAddress);
-        console.log("🔹 Dirección esperada (TON):", expectedAddressTON);
+        // ✅ Convertimos la dirección esperada al formato correcto (Base64 -> Hex)
+        let expectedAddressTON = cleanTONAddress(convertBase64ToTONAddress(ton.publicAddress));
+        console.log("🔹 Dirección esperada (TON):", `0:${expectedAddressTON}`);
+
+        // ✅ Convertir el monto esperado de TON a NanoTON (1 TON = 1e9 NanoTON)
+        const expectedAmountNano = parseInt(expectedAmountTON * 1e9, 10);
 
         // 🔍 Buscar la transacción correcta
         const validTransaction = transactions.find(tx => {
             const txHash = tx.hash;
-            const txAmount = parseInt(tx.in_msg?.value || tx.value || 0, 10);
+            const txAmountNano = parseInt(tx.in_msg?.value || tx.value || 0, 10);
 
             // 🔹 Normalizar dirección destino
             let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            let txDestination = cleanTONAddress(txDestinationRaw); // ✅ Limpiar dirección
+            let txDestination = `0:${cleanTONAddress(txDestinationRaw)}`;
 
             console.log("🔍 Comparando:", {
                 txHash,
-                txAmount,
+                txAmountNano,
                 txDestinationRaw,  // 🔹 Dirección antes de limpiar
                 txDestination,      // 🔹 Dirección después de limpiar
-                expectedAmount,     // 🔹 Monto esperado
-                expectedAddressTON  // 🔹 Dirección esperada en formato correcto
+                expectedAmountNano, // 🔹 Monto esperado en NanoTON
+                expectedAddressTON  // 🔹 Dirección esperada en formato TON
             });
 
             return (
-                txHash === txid &&             // ✅ TXID debe coincidir
-                txAmount === expectedAmount && // ✅ Monto en nanoTON debe coincidir
-                txDestination === expectedAddressTON // ✅ Dirección debe coincidir con el formato correcto
+                txHash === txid &&                     // ✅ TXID debe coincidir
+                txAmountNano === expectedAmountNano && // ✅ Monto en nanoTON debe coincidir
+                txDestination === `0:${expectedAddressTON}` // ✅ Dirección debe coincidir
             );
         });
 
