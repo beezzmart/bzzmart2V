@@ -67,8 +67,8 @@ async function createTransactionsTable() {
 
 // Llamar a la función al iniciar el servidor
 
+createTransactionsTable();
 
 
 
-
-module.exports = { connectDB, query, createTransactionsTable  };
+module.exports = { connectDB, query  };
