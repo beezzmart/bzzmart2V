@@ -31,10 +31,10 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             txAmountTON = txAmountNano / 1e9;
         }
 
-        // Convertir expectedAmount a NanoTON correctamente
+        // ✅ Corrección: expectedAmount en NanoTON (solo 9 ceros, no 18)
         const expectedAmountNano = expectedAmount * 1e9;
 
-        // Formatear dirección esperada en formato "0:..."
+        // ✅ Corrección: Asegurar que ambas direcciones sean comparables
         const expectedAddressFormatted = ton.publicAddress.startsWith("0:")
             ? ton.publicAddress
             : `0:${ton.publicAddress.slice(-64)}`;
@@ -49,7 +49,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             expectedAddress: expectedAddressFormatted
         });
 
-        // Validar transacción (monto y dirección deben coincidir)
+        // ✅ Validación correcta de transacción (monto + dirección)
         if (txDestination === expectedAddressFormatted && txAmountNano === expectedAmountNano) {
             console.log("✅ ¡Transacción válida!");
             return true;
