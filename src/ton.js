@@ -1,16 +1,18 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Convertir dirección TON Base64 → HEX correctamente
-function normalizeTONAddress(base64Address) {
-    if (!base64Address) return "";
-    let hex = Buffer.from(base64Address, "base64").toString("hex").toLowerCase();
+// ✅ Extraer y limpiar dirección TON correctamente
+function cleanTONAddress(address) {
+    if (!address) return "";
 
-    // 🔹 Asegurar que sean solo los últimos 64 caracteres
-    return hex.length > 64 ? hex.slice(-64) : hex;
+    // Eliminar el prefijo "0:" (workchain)
+    let cleaned = address.replace(/^0:/, "").toLowerCase();
+
+    // Asegurar que sean 64 caracteres exactos
+    return cleaned.length > 64 ? cleaned.slice(-64) : cleaned;
 }
 
-// ✅ Verificar transacción en TON API con conversión exacta
+// ✅ Verificar transacción en TON API
 async function verifyTONTransaction(txid, expectedAmount, telegramId) {
     const apiUrl = `https://tonapi.io/v2/blockchain/accounts/${ton.publicAddress}/transactions?limit=50`;
 
@@ -28,7 +30,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
         // 🔹 Convertir la dirección esperada de TON a HEX
-        let expectedAddressHex = normalizeTONAddress(ton.publicAddress);
+        let expectedAddressHex = cleanTONAddress(ton.publicAddress);
         console.log("🔹 Dirección esperada (HEX):", expectedAddressHex);
 
         // 🔍 Buscar la transacción correcta
@@ -36,9 +38,9 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             const txHash = tx.hash;
             const txAmount = parseInt(tx.in_msg?.value || tx.value || 0, 10); // Ya está en nanoTON
 
-            // 🔹 Obtener dirección destino y convertirla a HEX
+            // 🔹 Obtener dirección destino y normalizarla
             let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            let txDestination = normalizeTONAddress(txDestinationRaw); // Normalizamos para comparar bien
+            let txDestination = cleanTONAddress(txDestinationRaw); // Normalizamos para comparar bien
 
             console.log("🔍 Comparando:", {
                 txHash,
