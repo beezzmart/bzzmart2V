@@ -1,22 +1,20 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para limpiar la dirección y asegurarse de que coincida con TON
+// ✅ Función para limpiar la dirección (eliminar "0:" y convertir a minúsculas)
 function cleanTONAddress(address) {
     if (!address) return "";
     return address.replace(/^0:/, "").toLowerCase(); // 🔹 Elimina el prefijo "0:" y convierte a minúsculas
 }
 
-// ✅ Función para convertir dirección Base64 a formato TON (SIN caracteres extra)
+// ✅ Función para convertir Base64 a dirección HEX (SIN caracteres extra)
 function convertBase64ToTONAddress(base64Address) {
     try {
         const buffer = Buffer.from(base64Address, "base64");
         const hexAddress = buffer.toString("hex").toLowerCase();
 
-        // ✅ Extraer solo los 64 caracteres de la dirección (evita caracteres extra)
-        const correctHex = hexAddress.slice(-64);
-
-        return `0:${correctHex}`; // ✅ Agregar "0:" al inicio
+        // 🔹 Extraer solo los 64 caracteres de la dirección (evita caracteres extra)
+        return `0:${hexAddress.slice(-64)}`; // ✅ Agregar "0:" al inicio
     } catch (error) {
         console.error("❌ Error convirtiendo dirección Base64 a TON:", error.message);
         return "";
@@ -40,8 +38,8 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         console.log("🔹 TXID ingresado:", txid);
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
-        // 🔹 Convertir dirección esperada a formato TON correcto
-        let expectedAddressTON = convertBase64ToTONAddress(ton.publicAddress);
+        // ✅ Corregimos la dirección esperada (SIN caracteres extra)
+        let expectedAddressTON = cleanTONAddress(ton.publicAddress);
         console.log("🔹 Dirección esperada (TON):", expectedAddressTON);
 
         // 🔍 Buscar la transacción correcta
@@ -51,7 +49,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
 
             // 🔹 Normalizar dirección destino
             let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            let txDestination = `0:${cleanTONAddress(txDestinationRaw)}`; // ✅ Agregar "0:" al inicio
+            let txDestination = cleanTONAddress(txDestinationRaw); // ✅ Limpiar dirección
 
             console.log("🔍 Comparando:", {
                 txHash,
@@ -59,7 +57,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
                 txDestinationRaw,  // 🔹 Dirección antes de limpiar
                 txDestination,      // 🔹 Dirección después de limpiar
                 expectedAmount,     // 🔹 Monto esperado
-                expectedAddressTON  // 🔹 Dirección esperada en formato TON
+                expectedAddressTON  // 🔹 Dirección esperada en formato correcto
             });
 
             return (
