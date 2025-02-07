@@ -1,13 +1,13 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Verificar transacción en TON API
+// ✅ Verificar transacción en TON API v2
 async function verifyTONTransaction(txid, expectedAmount, telegramId) {
     const apiUrl = `https://tonapi.io/v2/blockchain/accounts/${ton.publicAddress}/transactions?limit=50`;
 
     try {
         const response = await axios.get(apiUrl);
-        const transactions = response.data.transactions; 
+        const transactions = response.data.transactions;
 
         if (!transactions || transactions.length === 0) {
             console.log("❌ No se encontraron transacciones en TON API.");
@@ -20,9 +20,9 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
 
         // 🔍 Buscar la transacción correcta
         const validTransaction = transactions.find(tx => {
-            const txHash = tx.transaction_id.hash; // ✅ TXID en TON API
-            const txDestination = tx.in_msg.destination.account_address; // ✅ Wallet destino
-            const txAmount = parseFloat(tx.in_msg.value) / 1e9; // ✅ Convertir de nanoton a TON
+            const txHash = tx.hash; // ✅ TXID en TON API
+            const txDestination = tx.in_msg?.destination?.account_address; // ✅ Wallet destino
+            const txAmount = parseFloat(tx.in_msg?.value || 0) / 1e9; // ✅ Convertir de nanoton a TON
 
             return (
                 txHash === txid && // Comparar TXID
