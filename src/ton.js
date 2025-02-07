@@ -1,7 +1,7 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-async function verifyTONTransaction(txid, expectedAmount, telegramId) {
+async function verifyTONTransaction(txid, expectedAmountTON, telegramId) {
     try {
         console.log(`📌 Verificando transacción en TON API...`);
         console.log(`🔹 TXID ingresado: ${txid}`);
@@ -21,14 +21,14 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         }
 
         // Extraer monto y dirección destino
-        let txAmountNano = transaction.in_msg.value ?? 0; // Monto en NanoTON
+        let txAmountNano = transaction.in_msg.value ?? 0; // Monto en NanoTON (correcto ahora)
         let txAmountTON = txAmountNano / 1e9; // Convertir a TON
         const txDestination = transaction.in_msg.destination?.address || "No encontrado";
 
-        // ✅ Corrección: expectedAmount en NanoTON (solo 9 ceros, NO 18)
-        const expectedAmountNano = expectedAmount * 1e9;
+        // ✅ Corrección: expectedAmount en NanoTON (1e9 UNA SOLA VEZ)
+        const expectedAmountNano = expectedAmountTON * 1e9; // Solo una vez
 
-        // ✅ Corrección: Convertir expectedAddress a formato TON HEX
+        // ✅ Corrección: Convertir expectedAddress a formato TON HEX (NO Base64)
         const expectedAddressHex = ton.publicAddress.startsWith("0:")
             ? ton.publicAddress
             : `0:${ton.publicAddress.slice(-64)}`;
@@ -39,7 +39,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             txAmountTON,
             txDestination,
             expectedAmountNano,
-            expectedAmountTON: expectedAmount,
+            expectedAmountTON,
             expectedAddress: expectedAddressHex
         });
 
