@@ -38,14 +38,14 @@ gameSettings: {
     },
     maxColonies: 6,
     colonyCost: {
-      basica: 5,
+      basica: 0.38,
       estandar: 8,
       oro: 15,
       diamante: 20,
       rubi: 25,
     },
     beeCosts: {
-      standard: 3,
+      standard: 0.38,
       gold: 5,
     },
   },
