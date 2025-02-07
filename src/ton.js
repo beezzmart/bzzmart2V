@@ -3,7 +3,7 @@ const { ton } = require("./config");
 
 // 🔍 Verificar una transacción TON en Tonviewer
 async function verifyTONTransaction(txid, expectedAmount, telegramId) {
-    const apiUrl = `https://tonviewer.com/api/transaction/${txid}`;
+    const apiUrl = `https://tonviewer.com/transaction/${txid}`;
 
     try {
         const response = await axios.get(apiUrl);
