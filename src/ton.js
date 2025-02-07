@@ -1,81 +1,49 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para limpiar la dirección (eliminar "0:" y convertir a minúsculas)
-function cleanTONAddress(address) {
-    if (!address) return "";
-    return address.replace(/^0:/, "").toLowerCase(); // 🔹 Elimina el prefijo "0:" y convierte a minúsculas
-}
-
-// ✅ Función para convertir Base64 a dirección HEX (SIN caracteres extra)
-function convertBase64ToTONAddress(base64Address) {
-    try {
-        const buffer = Buffer.from(base64Address, "base64");
-        const hexAddress = buffer.toString("hex").toLowerCase();
-
-        // 🔹 Extraer solo los 64 caracteres de la dirección (evita caracteres extra)
-        return `0:${hexAddress.slice(-64)}`; // ✅ Agregar "0:" al inicio
-    } catch (error) {
-        console.error("❌ Error convirtiendo dirección Base64 a TON:", error.message);
-        return "";
-    }
-}
-
-// ✅ Verificar transacción en TON API
+// ✅ Función para verificar una transacción usando `tonscan.org`
 async function verifyTONTransaction(txid, expectedAmount, telegramId) {
-    const apiUrl = `https://tonapi.io/v2/blockchain/accounts/${ton.publicAddress}/transactions?limit=50`;
+    const apiUrl = `https://tonscan.org/tx/${txid}`;
 
     try {
         const response = await axios.get(apiUrl);
-        const transactions = response.data.transactions;
+        const html = response.data;
 
-        if (!transactions || transactions.length === 0) {
-            console.log("❌ No se encontraron transacciones en TON API.");
+        console.log("📌 Verificando transacción en TONSCAN...");
+        console.log("🔹 TXID ingresado:", txid);
+
+        // 🔍 Extraer la información clave usando REGEX
+        const addressMatch = html.match(/To<\/div>\s*<div[^>]*>(EQ[^\s<]+)/);
+        const amountMatch = html.match(/Value Received TON<\/div>\s*<div[^>]*>([\d.]+) TON/);
+
+        if (!addressMatch || !amountMatch) {
+            console.log("❌ No se encontró información válida en TONSCAN.");
             return false;
         }
 
-        console.log("📌 Verificando transacción...");
-        console.log("🔹 TXID ingresado:", txid);
-        console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
+        const txDestination = addressMatch[1];  // 🔹 Dirección de destino en formato `EQ...`
+        const txAmount = parseFloat(amountMatch[1]); // 🔹 Monto recibido en TON
 
-        // ✅ Corregimos la dirección esperada (SIN caracteres extra)
-        let expectedAddressTON = cleanTONAddress(ton.publicAddress);
-        console.log("🔹 Dirección esperada (TON):", expectedAddressTON);
-
-        // 🔍 Buscar la transacción correcta
-        const validTransaction = transactions.find(tx => {
-            const txHash = tx.hash;
-            const txAmount = parseInt(tx.in_msg?.value || tx.value || 0, 10);
-
-            // 🔹 Normalizar dirección destino
-            let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            let txDestination = cleanTONAddress(txDestinationRaw); // ✅ Limpiar dirección
-
-            console.log("🔍 Comparando:", {
-                txHash,
-                txAmount,
-                txDestinationRaw,  // 🔹 Dirección antes de limpiar
-                txDestination,      // 🔹 Dirección después de limpiar
-                expectedAmount,     // 🔹 Monto esperado
-                expectedAddressTON  // 🔹 Dirección esperada en formato correcto
-            });
-
-            return (
-                txHash === txid &&             // ✅ TXID debe coincidir
-                txAmount === expectedAmount && // ✅ Monto en nanoTON debe coincidir
-                txDestination === expectedAddressTON // ✅ Dirección debe coincidir con el formato correcto
-            );
+        console.log("🔍 Comparando:", {
+            txAmount,
+            txDestination,
+            expectedAmount,
+            expectedAddress: ton.publicAddress
         });
 
-        if (validTransaction) {
-            console.log("✅ Transacción válida encontrada:", validTransaction);
+        // ✅ Verificar si la transacción es válida
+        if (
+            txAmount === expectedAmount &&
+            txDestination === ton.publicAddress
+        ) {
+            console.log("✅ Transacción válida encontrada.");
             return true;
         } else {
-            console.log("❌ No se encontró una transacción válida con este TXID.");
+            console.log("❌ La transacción no coincide con los datos esperados.");
             return false;
         }
     } catch (error) {
-        console.error("❌ Error verificando transacción TON API:", error.response?.data || error.message);
+        console.error("❌ Error verificando transacción en TONSCAN:", error.message);
         return false;
     }
 }
