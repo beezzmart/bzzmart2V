@@ -15,23 +15,23 @@ async function verifyTONTransaction(txid, expectedAmountTON, telegramId) {
         const transaction = response.data;
 
         // Validar si la respuesta contiene datos
-        if (!transaction || !transaction.in_msg) {
+        if (!transaction || !transaction.in_msg || !transaction.in_msg.destination) {
             console.log("❌ No se encontró información válida en TON API.");
             return false;
         }
 
-        // Extraer monto y dirección destino
-        let txAmountNano = transaction.in_msg.value ?? 0; // Monto en NanoTON (correcto)
+        // ✅ Extraer datos correctos
+        let txAmountNano = parseInt(transaction.in_msg.value) || 0; // Monto en NanoTON
         let txAmountTON = txAmountNano / 1e9; // Convertir a TON
-        const txDestination = transaction.in_msg.destination?.address || "No encontrado";
+        const txDestination = transaction.in_msg.destination.address || "No encontrado";
 
-        // ✅ Corrección: expectedAmount en NanoTON sin multiplicar erróneamente
+        // ✅ Corrección: expectedAmount en NanoTON sin errores
         const expectedAmountNano = expectedAmountTON * 1e9; // Ahora correcto
 
-        // ✅ Corrección: Convertir expectedAddress a formato TON HEX
+        // ✅ Corrección: Convertir expectedAddress a formato correcto (RAW HEX)
         const expectedAddressHex = ton.publicAddress.startsWith("0:")
             ? ton.publicAddress
-            : `0:${Buffer.from(ton.publicAddress, 'base64').toString('hex')}`;
+            : `0:${Buffer.from(ton.publicAddress, "base64").toString("hex").slice(0, 64)}`; // Solo los primeros 64 caracteres HEX
 
         console.log("🔍 Datos de la transacción obtenidos:", {
             txHash: txid,
@@ -43,7 +43,7 @@ async function verifyTONTransaction(txid, expectedAmountTON, telegramId) {
             expectedAddress: expectedAddressHex
         });
 
-        // ✅ Validación correcta de transacción (monto + dirección)
+        // ✅ Comparación correcta
         if (txDestination === expectedAddressHex && txAmountNano === expectedAmountNano) {
             console.log("✅ ¡Transacción válida!");
             return true;
