@@ -6,23 +6,23 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         console.log(`📌 Verificando transacción en TON API...`);
         console.log(`🔹 TXID ingresado: ${txid}`);
 
-        // URL de TON API para obtener la transacción
+        // URL de TON API para obtener la transacción específica
         const url = `https://tonapi.io/v2/blockchain/transactions/${txid}`;
         console.log(`🔹 URL de consulta: ${url}`);
 
         // Hacer la petición HTTP a TON API
         const response = await axios.get(url);
+        const transaction = response.data;
 
         // Validar si la respuesta es correcta
-        if (!response.data || !response.data.account) {
-            console.log("❌ No se encontró información en TON API.");
+        if (!transaction || !transaction.in_msg) {
+            console.log("❌ No se encontró información válida en TON API.");
             return false;
         }
 
         // Obtener datos de la transacción
-        const transaction = response.data;
-        const txAmount = parseFloat(transaction.amount) * 1e9; // Convertir a nanotons
-        const txDestination = transaction.account.address; // Dirección destino real
+        const txAmount = parseFloat(transaction.in_msg.value); // Monto recibido en nanotons
+        const txDestination = transaction.in_msg.destination?.address; // Dirección destino real
 
         console.log("🔍 Comparando:", {
             txHash: txid,
