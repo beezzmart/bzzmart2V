@@ -1,18 +1,18 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Normalizar dirección TON (Base64 → Hex)
+// ✅ Convertir dirección TON Base64 → Hex
 function normalizeTONAddress(base64Address) {
     let hex = Buffer.from(base64Address, "base64").toString("hex").toLowerCase();
-    
-    // ✅ Quitar caracteres adicionales si la longitud es incorrecta
+
+    // ✅ Si la dirección es más larga de 64 caracteres, recortar los primeros caracteres innecesarios
     if (hex.length > 64) {
         hex = hex.substring(hex.length - 64);
     }
     return hex;
 }
 
-// ✅ Verificar transacción en TON API
+// ✅ Verificar transacción TON
 async function verifyTONTransaction(txid, expectedAmount, telegramId) {
     const apiUrl = `https://tonapi.io/v2/blockchain/accounts/${ton.publicAddress}/transactions?limit=50`;
 
@@ -29,32 +29,31 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         console.log("🔹 TXID ingresado:", txid);
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
-        // 🔹 Convertir la dirección en `config.js` de Base64 a Hex (formato correcto)
+        // 🔹 Convertir dirección esperada de Base64 a HEX
         const expectedAddressHex = normalizeTONAddress(ton.publicAddress);
         console.log("🔹 Dirección esperada (HEX):", expectedAddressHex);
 
         // 🔍 Buscar la transacción correcta
         const validTransaction = transactions.find(tx => {
             const txHash = tx.hash;
-            const txAmount = parseInt(tx.in_msg?.value || tx.value || 0, 10); // Monto en nanoTON
-            const expectedNanoTON = expectedAmount * 1e9; // Convertir TON a nanoTON
+            const txAmount = parseInt(tx.in_msg?.value || tx.value || 0, 10); // Ya está en nanoTON
 
-            // Extraer dirección destino y convertirla a hex (quitar prefijo `0:` si existe)
+            // Extraer dirección destino y convertirla a HEX (sin `0:`)
             let txDestination = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            txDestination = txDestination.replace(/^0:/, "").toLowerCase(); // Quitar "0:" y convertir todo a minúsculas
+            txDestination = txDestination.replace(/^0:/, "").toLowerCase(); // Quitar "0:" y convertir a minúsculas
 
             console.log("🔍 Comparando:", {
                 txHash,
                 txAmount,
                 txDestination,
-                expectedNanoTON,
+                expectedAmount, // 🔹 Ahora en nanoTON directamente
                 expectedAddressHex
             });
 
             return (
-                txHash === txid && // Comparar TXID
-                txAmount === expectedNanoTON && // Comparar monto exacto en nanoTON
-                txDestination === expectedAddressHex // Comparar dirección en HEX
+                txHash === txid && // TXID debe coincidir
+                txAmount === expectedAmount && // Comparar exacto sin conversión extra
+                txDestination === expectedAddressHex // Comparar direcciones HEX
             );
         });
 
