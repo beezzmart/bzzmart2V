@@ -16,16 +16,16 @@ async function verifyTONTransaction(txid, expectedAmount) {
         console.log("\n🔍 Respuesta de la API:");
         console.log(transaction);
 
-        if (!transaction || !transaction.utime) {
+        if (!transaction || !transaction.in_msg) {
             console.log("❌ No se encontró información válida en TONAPI.");
             return false;
         }
 
-        // Extraer datos de la transacción
-        const txDestination = transaction.out_msgs[0].destination.address;
-        const txAmount = parseFloat(transaction.out_msgs[0].value) / 1e9; // Convertir nanotons a TON
+        // Extraer datos de la transacción desde `in_msg`
+        const txDestination = transaction.in_msg.destination.address;
+        const txAmount = parseFloat(transaction.in_msg.value) / 1e9; // Convertir nanotons a TON
 
-        console.log("🔍 Comparando:", {
+        console.log("\n🔍 Comparando:", {
             txHash: txid,
             txAmount,
             txDestination,
