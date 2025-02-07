@@ -1,9 +1,15 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Convertir Base64 a Hex sin librerías externas
-function base64ToHex(base64) {
-    return Buffer.from(base64, "base64").toString("hex").toLowerCase();
+// ✅ Normalizar dirección TON (Base64 → Hex)
+function normalizeTONAddress(base64Address) {
+    let hex = Buffer.from(base64Address, "base64").toString("hex").toLowerCase();
+    
+    // ✅ Quitar caracteres adicionales si la longitud es incorrecta
+    if (hex.length > 64) {
+        hex = hex.substring(hex.length - 64);
+    }
+    return hex;
 }
 
 // ✅ Verificar transacción en TON API
@@ -23,8 +29,8 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         console.log("🔹 TXID ingresado:", txid);
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
-        // 🔹 Convertir la dirección en `config.js` de Base64 a Hex
-        const expectedAddressHex = base64ToHex(ton.publicAddress);
+        // 🔹 Convertir la dirección en `config.js` de Base64 a Hex (formato correcto)
+        const expectedAddressHex = normalizeTONAddress(ton.publicAddress);
         console.log("🔹 Dirección esperada (HEX):", expectedAddressHex);
 
         // 🔍 Buscar la transacción correcta
@@ -33,9 +39,9 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             const txAmount = parseInt(tx.in_msg?.value || tx.value || 0, 10); // Monto en nanoTON
             const expectedNanoTON = expectedAmount * 1e9; // Convertir TON a nanoTON
 
-            // Extraer dirección destino y convertirla a hex
+            // Extraer dirección destino y convertirla a hex (quitar prefijo `0:` si existe)
             let txDestination = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            txDestination = txDestination.toLowerCase(); // Convertir todo a minúsculas
+            txDestination = txDestination.replace(/^0:/, "").toLowerCase(); // Quitar "0:" y convertir todo a minúsculas
 
             console.log("🔍 Comparando:", {
                 txHash,
@@ -47,7 +53,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
 
             return (
                 txHash === txid && // Comparar TXID
-                txAmount === expectedNanoTON && // Comparar monto
+                txAmount === expectedNanoTON && // Comparar monto exacto en nanoTON
                 txDestination === expectedAddressHex // Comparar dirección en HEX
             );
         });
