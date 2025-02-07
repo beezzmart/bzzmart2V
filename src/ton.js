@@ -1,7 +1,12 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Verificar transacción en TON API
+// ✅ Función para limpiar la dirección y compararla
+function normalizeAddress(rawAddress) {
+    return rawAddress.replace(/^0:/, "").toLowerCase(); // Quita el "0:" y pasa a minúsculas
+}
+
+// ✅ Verificar transacción en TON API sin usar TonWeb
 async function verifyTONTransaction(txid, expectedAmount, telegramId) {
     const apiUrl = `https://tonapi.io/v2/blockchain/accounts/${ton.publicAddress}/transactions?limit=50`;
 
@@ -20,29 +25,27 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
 
         // 🔍 Buscar la transacción correcta
         const validTransaction = transactions.find(tx => {
-            const txHash = tx.hash; // ✅ TXID correcto
-            const txAmount = parseFloat(tx.in_msg?.value || tx.value || 0) / 1e9; // ✅ Convertir nanoton a TON
+            const txHash = tx.hash;
+            const txAmount = parseInt(tx.in_msg?.value || tx.value || 0, 10); // Monto en nanoTON (sin dividir entre 1e9)
+            const expectedNanoTON = expectedAmount * 1e9; // Convertimos el esperado a nanoTON
 
-            // Buscar dirección de destino correcta
-            let txDestination = null;
-            if (tx.in_msg?.destination?.account_address) {
-                txDestination = tx.in_msg.destination.account_address;
-            } else if (tx.account?.address) {
-                txDestination = tx.account.address;
-            }
+            // Extraer dirección destino
+            let txDestination = tx.in_msg?.destination?.account_address || tx.account?.address || "";
+            txDestination = normalizeAddress(txDestination);
+            const expectedAddress = normalizeAddress(ton.publicAddress);
 
             console.log("🔍 Comparando:", {
                 txHash,
                 txAmount,
                 txDestination,
-                expectedAmount,
-                expectedAddress: ton.publicAddress
+                expectedNanoTON,
+                expectedAddress
             });
 
             return (
                 txHash === txid && // Comparar TXID
-                txAmount.toFixed(2) === expectedAmount.toFixed(2) && // Comparar monto
-                txDestination === ton.publicAddress // Comparar dirección de destino
+                txAmount === expectedNanoTON && // Comparar monto en nanoTON
+                txDestination === expectedAddress // Comparar dirección destino en formato RAW
             );
         });
 
