@@ -4,7 +4,6 @@ module.exports = {
   telegramToken: process.env.TELEGRAM_BOT_TOKEN,
 ton: {
     apiUrl: process.env.TON_API_URL,
-    privateKey: process.env.TON_WALLET_PRIVATE_KEY,
     publicAddress: process.env.TON_WALLET_PUBLIC_ADDRESS,
   },
   db: {
