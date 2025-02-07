@@ -16,31 +16,49 @@ async function verifyTONTransaction(txid, expectedAmount) {
         console.log("\n🔍 Respuesta de la API:");
         console.log(transaction);
 
-        if (!transaction || !transaction.in_msg) {
+        if (!transaction) {
             console.log("❌ No se encontró información válida en TONAPI.");
             return false;
         }
 
-        // Extraer datos de la transacción desde `in_msg`
-        const txDestination = transaction.in_msg.destination.address;
-        const txAmount = parseFloat(transaction.in_msg.value) / 1e9; // Convertir nanotons a TON
-        const inMsgHash = transaction.in_msg.hash || "";
+        // 📌 Extraer valores de la transacción
+        const inMsg = transaction.in_msg || {};
+        const outMsgs = transaction.out_msgs || [];
+
+        // 📌 Extraer datos principales
+        const txAmount = inMsg.value ? parseFloat(inMsg.value) / 1e9 : 0; // Convertir nanotons a TON
+        const txDestination = inMsg.destination ? inMsg.destination.address : "";
+        const inMsgHash = inMsg.hash || "";
         const prevTransHash = transaction.prev_trans_hash || "";
+
+        // 📌 Intentar extraer datos de `out_msgs`
+        let outMsgDestination = "";
+        let outMsgAmount = 0;
+
+        if (outMsgs.length > 0) {
+            const firstOutMsg = outMsgs[0];
+            outMsgDestination = firstOutMsg.destination ? firstOutMsg.destination.address : "";
+            outMsgAmount = firstOutMsg.value ? parseFloat(firstOutMsg.value) / 1e9 : 0;
+        }
 
         console.log("\n🔍 Comparando:", {
             txHash: txid,
-            txAmount,
-            txDestination,
             inMsgHash,
             prevTransHash,
+            txAmount,
+            outMsgAmount,
+            txDestination,
+            outMsgDestination,
             expectedAmount,
             expectedAddress: ton.publicAddress
         });
 
-        // Verificar si la transacción es válida con múltiples hash
+        // 📌 Validar transacción con `in_msg` o `out_msgs`
         const validHash = txid === inMsgHash || txid === prevTransHash;
+        const validAmount = txAmount === expectedAmount || outMsgAmount === expectedAmount;
+        const validDestination = txDestination === ton.publicAddress || outMsgDestination === ton.publicAddress;
 
-        if (validHash && txAmount === expectedAmount && txDestination === ton.publicAddress) {
+        if (validHash && validAmount && validDestination) {
             console.log("✅ Transacción válida encontrada.");
             return true;
         } else {
