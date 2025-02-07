@@ -1,3 +1,7 @@
+const axios = require("axios");
+const { ton } = require("./config");
+
+
 // ✅ Función para limpiar la dirección (eliminar "0:" y convertir a minúsculas)
 function cleanTONAddress(address) {
     if (!address) return "";
