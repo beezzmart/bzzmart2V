@@ -7,12 +7,16 @@ function cleanTONAddress(address) {
     return address.replace(/^0:/, "").toLowerCase(); // 🔹 Elimina el prefijo "0:" y convierte a minúsculas
 }
 
-// ✅ Función para convertir dirección Base64 a formato TON
+// ✅ Función para convertir dirección Base64 a formato TON (SIN caracteres extra)
 function convertBase64ToTONAddress(base64Address) {
     try {
         const buffer = Buffer.from(base64Address, "base64");
         const hexAddress = buffer.toString("hex").toLowerCase();
-        return cleanTONAddress(hexAddress);
+
+        // ✅ Extraer solo los 64 caracteres de la dirección (evita caracteres extra)
+        const correctHex = hexAddress.slice(-64);
+
+        return `0:${correctHex}`; // ✅ Agregar "0:" al inicio
     } catch (error) {
         console.error("❌ Error convirtiendo dirección Base64 a TON:", error.message);
         return "";
@@ -36,7 +40,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         console.log("🔹 TXID ingresado:", txid);
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
-        // 🔹 Convertir dirección esperada a formato TON
+        // 🔹 Convertir dirección esperada a formato TON correcto
         let expectedAddressTON = convertBase64ToTONAddress(ton.publicAddress);
         console.log("🔹 Dirección esperada (TON):", expectedAddressTON);
 
@@ -47,7 +51,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
 
             // 🔹 Normalizar dirección destino
             let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            let txDestination = cleanTONAddress(txDestinationRaw);
+            let txDestination = `0:${cleanTONAddress(txDestinationRaw)}`; // ✅ Agregar "0:" al inicio
 
             console.log("🔍 Comparando:", {
                 txHash,
@@ -61,7 +65,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             return (
                 txHash === txid &&             // ✅ TXID debe coincidir
                 txAmount === expectedAmount && // ✅ Monto en nanoTON debe coincidir
-                txDestination === expectedAddressTON // ✅ Dirección debe coincidir
+                txDestination === expectedAddressTON // ✅ Dirección debe coincidir con el formato correcto
             );
         });
 
