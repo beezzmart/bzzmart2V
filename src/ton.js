@@ -7,7 +7,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         console.log(`🔹 TXID ingresado: ${txid}`);
 
         // Consulta a TonViewer
-        const apiUrl = `https://tonviewer.com/api/transaction/${txid}`;
+        const apiUrl = `https://tonviewer.com/transaction/${txid}`;
         const response = await axios.get(apiUrl);
 
         if (!response.data) {
