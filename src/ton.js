@@ -1,18 +1,22 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para verificar una transacción usando `tonscan.org`
 async function verifyTONTransaction(txid, expectedAmount, telegramId) {
     const apiUrl = `https://tonscan.org/tx/${txid}`;
 
     try {
+        console.log("\n📌 Verificando transacción en TONSCAN...");
+        console.log("🔹 TXID ingresado:", txid);
+        console.log("🔹 URL de consulta:", apiUrl);
+
+        // 🛠️ Hacemos la petición HTTP a TONSCAN
         const response = await axios.get(apiUrl);
         const html = response.data;
 
-        console.log("📌 Verificando transacción en TONSCAN...");
-        console.log("🔹 TXID ingresado:", txid);
+        console.log("\n🔍 HTML recibido (primeros 500 caracteres):");
+        console.log(html.substring(0, 500)); // Mostramos un fragmento del HTML para analizar
 
-        // 🔍 Extraer la información clave usando REGEX
+        // 🔎 Intentamos extraer la dirección de destino y el monto recibido
         const addressMatch = html.match(/To<\/div>\s*<div[^>]*>(EQ[^\s<]+)/);
         const amountMatch = html.match(/Value Received TON<\/div>\s*<div[^>]*>([\d.]+) TON/);
 
