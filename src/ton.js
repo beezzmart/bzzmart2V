@@ -25,17 +25,11 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         let txAmountTON = txAmountNano / 1e9; // Convertir a TON
         const txDestination = transaction.in_msg.destination?.address || "No encontrado";
 
-        // Buscar en out_msgs si el monto en in_msg es 0
-        if (txAmountNano === 0 && transaction.out_msgs.length > 0) {
-            txAmountNano = transaction.out_msgs[0]?.value ?? 0;
-            txAmountTON = txAmountNano / 1e9;
-        }
-
-        // ✅ Corrección: expectedAmount en NanoTON (solo 9 ceros, no 18)
+        // ✅ Corrección: expectedAmount en NanoTON (solo 9 ceros, NO 18)
         const expectedAmountNano = expectedAmount * 1e9;
 
-        // ✅ Corrección: Asegurar que ambas direcciones sean comparables
-        const expectedAddressFormatted = ton.publicAddress.startsWith("0:")
+        // ✅ Corrección: Convertir expectedAddress a formato TON HEX
+        const expectedAddressHex = ton.publicAddress.startsWith("0:")
             ? ton.publicAddress
             : `0:${ton.publicAddress.slice(-64)}`;
 
@@ -46,11 +40,11 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             txDestination,
             expectedAmountNano,
             expectedAmountTON: expectedAmount,
-            expectedAddress: expectedAddressFormatted
+            expectedAddress: expectedAddressHex
         });
 
         // ✅ Validación correcta de transacción (monto + dirección)
-        if (txDestination === expectedAddressFormatted && txAmountNano === expectedAmountNano) {
+        if (txDestination === expectedAddressHex && txAmountNano === expectedAmountNano) {
             console.log("✅ ¡Transacción válida!");
             return true;
         } else {
