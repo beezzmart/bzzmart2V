@@ -24,17 +24,23 @@ async function verifyTONTransaction(txid, expectedAmount) {
         // Extraer datos de la transacción desde `in_msg`
         const txDestination = transaction.in_msg.destination.address;
         const txAmount = parseFloat(transaction.in_msg.value) / 1e9; // Convertir nanotons a TON
+        const inMsgHash = transaction.in_msg.hash || "";
+        const prevTransHash = transaction.prev_trans_hash || "";
 
         console.log("\n🔍 Comparando:", {
             txHash: txid,
             txAmount,
             txDestination,
+            inMsgHash,
+            prevTransHash,
             expectedAmount,
             expectedAddress: ton.publicAddress
         });
 
-        // Verificar si la transacción es válida
-        if (txAmount === expectedAmount && txDestination === ton.publicAddress) {
+        // Verificar si la transacción es válida con múltiples hash
+        const validHash = txid === inMsgHash || txid === prevTransHash;
+
+        if (validHash && txAmount === expectedAmount && txDestination === ton.publicAddress) {
             console.log("✅ Transacción válida encontrada.");
             return true;
         } else {
