@@ -1,72 +1,49 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-async function verifyTONTransaction(txid, expectedAmount) {
-    const apiUrl = `https://tonapi.io/v2/blockchain/transactions/${txid}`;
-
+async function verifyTONTransaction(txid, expectedAmount, telegramId) {
     try {
-        console.log("\n📌 Verificando transacción en TONAPI...");
-        console.log("🔹 TXID ingresado:", txid);
-        console.log("🔹 URL de consulta:", apiUrl);
+        console.log(`📌 Verificando transacción en TonViewer...`);
+        console.log(`🔹 TXID ingresado: ${txid}`);
 
-        // Hacemos la petición HTTP a TONAPI
+        // Consulta a TonViewer
+        const apiUrl = `https://tonviewer.com/api/transaction/${txid}`;
         const response = await axios.get(apiUrl);
-        const transaction = response.data;
 
-        console.log("\n🔍 Respuesta de la API:");
-        console.log(transaction);
-
-        if (!transaction) {
-            console.log("❌ No se encontró información válida en TONAPI.");
+        if (!response.data) {
+            console.log("❌ No se encontró información en TonViewer.");
             return false;
         }
 
-        // 📌 Extraer valores de la transacción
+        const transaction = response.data;
+        console.log("🔍 Datos de la transacción recibida:", transaction);
+
+        // Extraer el monto y la wallet destino desde in_msg
         const inMsg = transaction.in_msg || {};
-        const outMsgs = transaction.out_msgs || [];
+        const txDestination = inMsg.destination?.address || "";
+        const txAmount = parseFloat(inMsg.value || 0);
 
-        // 📌 Extraer datos principales
-        const txAmount = inMsg.value ? parseFloat(inMsg.value) / 1e9 : 0; // Convertir nanotons a TON
-        const txDestination = inMsg.destination ? inMsg.destination.address : "";
-        const inMsgHash = inMsg.hash || "";
-        const prevTransHash = transaction.prev_trans_hash || "";
-
-        // 📌 Intentar extraer datos de `out_msgs`
-        let outMsgDestination = "";
-        let outMsgAmount = 0;
-
-        if (outMsgs.length > 0) {
-            const firstOutMsg = outMsgs[0];
-            outMsgDestination = firstOutMsg.destination ? firstOutMsg.destination.address : "";
-            outMsgAmount = firstOutMsg.value ? parseFloat(firstOutMsg.value) / 1e9 : 0;
-        }
-
-        console.log("\n🔍 Comparando:", {
+        console.log("🔍 Comparando:", {
             txHash: txid,
-            inMsgHash,
-            prevTransHash,
             txAmount,
-            outMsgAmount,
             txDestination,
-            outMsgDestination,
             expectedAmount,
             expectedAddress: ton.publicAddress
         });
 
-        // 📌 Validar transacción con `in_msg` o `out_msgs`
-        const validHash = txid === inMsgHash || txid === prevTransHash;
-        const validAmount = txAmount === expectedAmount || outMsgAmount === expectedAmount;
-        const validDestination = txDestination === ton.publicAddress || outMsgDestination === ton.publicAddress;
-
-        if (validHash && validAmount && validDestination) {
-            console.log("✅ Transacción válida encontrada.");
+        // Comparar monto y dirección destino
+        if (
+            txDestination === ton.publicAddress &&
+            txAmount === expectedAmount * 1e9 // Convertimos TON a nanotons
+        ) {
+            console.log("✅ ¡Transacción válida!");
             return true;
         } else {
             console.log("❌ La transacción no coincide con los datos esperados.");
             return false;
         }
     } catch (error) {
-        console.error("❌ Error verificando transacción en TONAPI:", error.message);
+        console.error("❌ Error verificando transacción en TonViewer:", error.message);
         return false;
     }
 }
