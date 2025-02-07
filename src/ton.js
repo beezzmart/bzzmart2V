@@ -20,22 +20,25 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             return false;
         }
 
-        // Obtener datos de la transacción
-        const txAmount = parseFloat(transaction.in_msg.value); // Monto recibido en nanotons
+        // Extraer datos relevantes
+        const txAmountNano = transaction.in_msg.value; // Monto en NanoTON
+        const txAmountTON = txAmountNano / 1e9; // Convertir a TON
         const txDestination = transaction.in_msg.destination?.address; // Dirección destino real
 
-        console.log("🔍 Comparando:", {
+        console.log("🔍 Datos de la transacción obtenidos:", {
             txHash: txid,
-            txAmount,
+            txAmountNano,
+            txAmountTON,
             txDestination,
-            expectedAmount: expectedAmount * 1e9, // Convertir a nanotons
+            expectedAmountNano: expectedAmount * 1e9, // Convertido a NanoTON
+            expectedAmountTON: expectedAmount,
             expectedAddress: ton.publicAddress
         });
 
-        // Comparar monto y dirección destino
+        // Validar la transacción
         if (
             txDestination === ton.publicAddress &&
-            txAmount === expectedAmount * 1e9
+            txAmountNano === expectedAmount * 1e9
         ) {
             console.log("✅ ¡Transacción válida!");
             return true;
