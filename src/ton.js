@@ -4,7 +4,7 @@ const { ton } = require("./config");
 // ✅ Función para limpiar dirección HEX y asegurar formato correcto
 function cleanTONAddress(address) {
     if (!address) return "";
-    return address.replace(/^0:/, "").toLowerCase();
+    return address.replace(/^0:/, "").trim().toLowerCase(); // 🔹 Elimina "0:" y espacios invisibles
 }
 
 // ✅ Función para convertir Base64 a dirección HEX con "0:" al inicio
@@ -12,7 +12,7 @@ function convertBase64ToTONAddress(base64Address) {
     try {
         const buffer = Buffer.from(base64Address, "base64");
         const hexAddress = buffer.toString("hex").toLowerCase();
-        return `0:${hexAddress.slice(-64)}`;
+        return `0:${hexAddress.slice(-64)}`.trim();
     } catch (error) {
         console.error("❌ Error convirtiendo dirección Base64 a TON:", error.message);
         return "";
@@ -37,7 +37,7 @@ async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
         // ✅ Convertimos la dirección esperada al formato correcto
-        let expectedAddressTON = `0:${cleanTONAddress(convertBase64ToTONAddress(ton.publicAddress))}`;
+        let expectedAddressTON = `0:${cleanTONAddress(convertBase64ToTONAddress(ton.publicAddress))}`.trim();
         console.log("🔹 Dirección esperada (TON):", expectedAddressTON);
 
         // 🔍 Buscar la transacción correcta
@@ -47,13 +47,13 @@ async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
 
             // 🔹 Normalizar dirección destino
             let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            let txDestination = `0:${cleanTONAddress(txDestinationRaw)}`;
+            let txDestination = `0:${cleanTONAddress(txDestinationRaw)}`.trim();
 
-            // ✅ Convertir todo a STRING para comparar correctamente
-            const txAmountStr = String(txAmountNano);
-            const expectedAmountStr = String(expectedAmountNano);
-            const txDestinationStr = String(txDestination);
-            const expectedAddressStr = String(expectedAddressTON);
+            // ✅ Convertir todo a STRING y eliminar espacios invisibles antes de comparar
+            const txAmountStr = String(txAmountNano).trim();
+            const expectedAmountStr = String(expectedAmountNano).trim();
+            const txDestinationStr = String(txDestination).trim();
+            const expectedAddressStr = String(expectedAddressTON).trim();
 
             console.log("🔍 Comparando:", {
                 txHash,
