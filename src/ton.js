@@ -20,7 +20,7 @@ function convertBase64ToTONAddress(base64Address) {
 }
 
 // ✅ Verificar transacción en TON API
-async function verifyTONTransaction(txid, expectedAmountTON, telegramId) {
+async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
     const apiUrl = `https://tonapi.io/v2/blockchain/accounts/${ton.publicAddress}/transactions?limit=50`;
 
     try {
@@ -36,12 +36,9 @@ async function verifyTONTransaction(txid, expectedAmountTON, telegramId) {
         console.log("🔹 TXID ingresado:", txid);
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
-        // ✅ Convertimos la dirección esperada al formato correcto (Base64 -> Hex)
-        let expectedAddressTON = cleanTONAddress(convertBase64ToTONAddress(ton.publicAddress));
-        console.log("🔹 Dirección esperada (TON):", `0:${expectedAddressTON}`);
-
-        // ✅ Convertir el monto esperado de TON a NanoTON (1 TON = 1e9 NanoTON)
-        const expectedAmountNano = parseInt(expectedAmountTON * 1e9, 10);
+        // ✅ Convertimos la dirección esperada al formato correcto
+        let expectedAddressTON = `0:${cleanTONAddress(convertBase64ToTONAddress(ton.publicAddress))}`;
+        console.log("🔹 Dirección esperada (TON):", expectedAddressTON);
 
         // 🔍 Buscar la transacción correcta
         const validTransaction = transactions.find(tx => {
@@ -58,13 +55,13 @@ async function verifyTONTransaction(txid, expectedAmountTON, telegramId) {
                 txDestinationRaw,  // 🔹 Dirección antes de limpiar
                 txDestination,      // 🔹 Dirección después de limpiar
                 expectedAmountNano, // 🔹 Monto esperado en NanoTON
-                expectedAddressTON  // 🔹 Dirección esperada en formato TON
+                expectedAddressTON  // 🔹 Dirección esperada en formato TON con "0:"
             });
 
             return (
                 txHash === txid &&                     // ✅ TXID debe coincidir
-                txAmountNano === expectedAmountNano && // ✅ Monto en nanoTON debe coincidir
-                txDestination === `0:${expectedAddressTON}` // ✅ Dirección debe coincidir
+                txAmountNano === expectedAmountNano && // ✅ Monto en NanoTON debe coincidir
+                txDestination === expectedAddressTON   // ✅ Dirección debe coincidir con "0:"
             );
         });
 
