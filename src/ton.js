@@ -1,3 +1,7 @@
+const axios = require("axios");
+const { ton } = require("./config");
+
+// Verificar una transacción TON en Tonviewer
 async function verifyTONTransaction(txid, expectedAmount, telegramId) {
     const apiUrl = `https://tonapi.io/v1/blockchain/account/transactions?account=${ton.publicAddress}&limit=10`;
 
@@ -24,3 +28,5 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         return false;
     }
 }
+
+module.exports = { verifyTONTransaction };
