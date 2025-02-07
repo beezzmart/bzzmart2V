@@ -16,13 +16,28 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
 
         console.log("📌 Verificando transacción...");
         console.log("🔹 TXID ingresado:", txid);
-        console.log("🔹 Últimas transacciones recibidas:", transactions);
+        console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
         // 🔍 Buscar la transacción correcta
         const validTransaction = transactions.find(tx => {
             const txHash = tx.hash; // ✅ TXID correcto
-            const txDestination = tx.in_msg?.destination?.account_address || tx.account?.address; // ✅ Dirección de destino
             const txAmount = parseFloat(tx.in_msg?.value || tx.value || 0) / 1e9; // ✅ Convertir nanoton a TON
+
+            // Buscar dirección de destino correcta
+            let txDestination = null;
+            if (tx.in_msg?.destination?.account_address) {
+                txDestination = tx.in_msg.destination.account_address;
+            } else if (tx.account?.address) {
+                txDestination = tx.account.address;
+            }
+
+            console.log("🔍 Comparando:", {
+                txHash,
+                txAmount,
+                txDestination,
+                expectedAmount,
+                expectedAddress: ton.publicAddress
+            });
 
             return (
                 txHash === txid && // Comparar TXID
