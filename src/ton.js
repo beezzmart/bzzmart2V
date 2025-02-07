@@ -49,7 +49,7 @@ async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
             let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
             let txDestination = `0:${cleanTONAddress(txDestinationRaw)}`.trim();
 
-            // ✅ Convertir todo a STRING y eliminar espacios invisibles antes de comparar
+            // ✅ FORZAR TODO A STRING PARA EVITAR ERRORES DE COMPARACIÓN
             const txAmountStr = String(txAmountNano).trim();
             const expectedAmountStr = String(expectedAmountNano).trim();
             const txDestinationStr = String(txDestination).trim();
@@ -69,14 +69,14 @@ async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
             });
 
             return (
-                txHash === txid &&                      // ✅ TXID debe coincidir
-                txAmountStr === expectedAmountStr &&    // ✅ Monto convertido a STRING debe coincidir
-                txDestinationStr === expectedAddressStr // ✅ Dirección convertida a STRING debe coincidir
+                String(txHash).trim() === String(txid).trim() &&  // ✅ TXID debe coincidir
+                txAmountStr === expectedAmountStr &&             // ✅ Monto en nanoTON (convertido a STRING) debe coincidir
+                txDestinationStr === expectedAddressStr          // ✅ Dirección (convertida a STRING) debe coincidir
             );
         });
 
         if (validTransaction) {
-            console.log("✅ Transacción válida encontrada:", validTransaction);
+            console.log("✅ TRANSACCIÓN VÁLIDA ENCONTRADA:", validTransaction);
             return true;
         } else {
             console.log("❌ No se encontró una transacción válida con este TXID.");
