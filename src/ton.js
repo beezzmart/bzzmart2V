@@ -1,42 +1,26 @@
-const axios = require("axios");
-const { ton } = require("./config");
+async function verifyTONTransaction(txid, expectedAmount, telegramId) {
+    const apiUrl = `https://tonapi.io/v1/blockchain/account/transactions?account=${ton.publicAddress}&limit=10`;
 
-// Verificar una transacción TON en Tonviewer
-async function verifyTONTransaction(txid, expectedAmount) {
-  const explorerUrl = `https://tonapi.io/v1/blockchain/transaction/${txid}`;
+    try {
+        const response = await axios.get(apiUrl);
+        const transactions = response.data.transactions;
 
-  try {
-    const response = await axios.get(explorerUrl);
-    const transaction = response.data;
+        console.log("📌 Verificando transacción...");
+        console.log("🔹 Wallet pública:", ton.publicAddress);
+        console.log("🔹 Transacciones recientes:", transactions);
 
-    if (!transaction) {
-      console.error("❌ Transacción no encontrada en Tonviewer.");
-      return false;
+        // Buscar la transacción por TXID
+        const validTransaction = transactions.find(tx =>
+            tx.utime && 
+            tx.transaction_id.hash === txid &&
+            parseFloat(tx.amount).toFixed(2) === (expectedAmount / 1e9).toFixed(2) && 
+            tx.account.address === ton.publicAddress // Verifica que la wallet destino es la correcta
+        );
+
+        console.log("🔍 Transacción encontrada:", validTransaction || "No encontrada");
+        return validTransaction !== undefined;
+    } catch (error) {
+        console.error("❌ Error verificando transacción TON:", error.message);
+        return false;
     }
-
-    // Obtener datos de la transacción
-    const sender = transaction.in_msg.source.address; // Dirección del remitente
-    const receiver = transaction.in_msg.destination.address; // Dirección del receptor
-    const amount = parseFloat(transaction.in_msg.value) / 1e9; // Convertir de nanotons a TON
-
-    // Verificar que el receptor sea nuestra billetera
-    if (receiver !== ton.publicAddress) {
-      console.error("❌ La transacción no fue enviada a la billetera correcta.");
-      return false;
-    }
-
-    // Verificar que el monto coincida
-    if (amount < expectedAmount) {
-      console.error(`❌ Monto incorrecto: Se esperaban ${expectedAmount} TON pero recibió ${amount} TON.`);
-      return false;
-    }
-
-    console.log(`✅ Transacción válida: ${amount} TON recibidos de ${sender}.`);
-    return true;
-  } catch (error) {
-    console.error("❌ Error verificando transacción en Tonviewer:", error.message);
-    return false;
-  }
 }
-
-module.exports = { verifyTONTransaction };
