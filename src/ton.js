@@ -21,14 +21,14 @@ async function verifyTONTransaction(txid, expectedAmountTON, telegramId) {
         }
 
         // Extraer monto y dirección destino
-        let txAmountNano = transaction.in_msg.value ?? 0; // Monto en NanoTON (correcto ahora)
-        let txAmountTON = txAmountNano / 1e9; // Convertir a TON
+        const txAmountNano = transaction.in_msg.value ?? 0; // Monto en NanoTON (9 ceros)
+        const txAmountTON = txAmountNano / 1e9; // Convertir a TON
         const txDestination = transaction.in_msg.destination?.address || "No encontrado";
 
-        // ✅ Corrección: expectedAmount en NanoTON (1e9 UNA SOLA VEZ)
-        const expectedAmountNano = expectedAmountTON * 1e9; // Solo una vez
+        // ✅ Corrección: expectedAmount en NanoTON (solo 9 ceros, NO 18)
+        const expectedAmountNano = expectedAmountTON * 1e9; 
 
-        // ✅ Corrección: Convertir expectedAddress a formato TON HEX (NO Base64)
+        // ✅ Corrección: Convertir expectedAddress a formato HEX (TON usa "0:" + HEX)
         const expectedAddressHex = ton.publicAddress.startsWith("0:")
             ? ton.publicAddress
             : `0:${ton.publicAddress.slice(-64)}`;
