@@ -19,12 +19,17 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         console.log("🔹 Últimas 50 transacciones:", transactions);
 
         // 🔍 Buscar la transacción correcta
-        const validTransaction = transactions.find(tx =>
-            tx.in_msg &&
-            tx.in_msg.transaction_id.hash === txid && // Comparar TXID
-            parseFloat(tx.in_msg.value) / 1e9 === parseFloat(expectedAmount) && // Monto en TON
-            tx.in_msg.destination.account_address === ton.publicAddress // Comparar dirección destino
-        );
+        const validTransaction = transactions.find(tx => {
+            const txHash = tx.transaction_id?.hash || tx.hash; // ✅ Usamos tx.hash si transaction_id no existe
+            const txDestination = tx.in_msg?.destination?.account_address;
+            const txAmount = parseFloat(tx.in_msg?.value) / 1e9;
+
+            return (
+                txHash === txid && // Comparar TXID
+                txAmount === parseFloat(expectedAmount) && // Comparar monto en TON
+                txDestination === ton.publicAddress // Comparar dirección destino
+            );
+        });
 
         if (validTransaction) {
             console.log("✅ Transacción válida encontrada:", validTransaction);
