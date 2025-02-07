@@ -1,7 +1,7 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para limpiar la dirección HEX y asegurar formato correcto
+// ✅ Función para limpiar dirección HEX y asegurar formato correcto
 function cleanTONAddress(address) {
     if (!address) return "";
     return address.replace(/^0:/, "").toLowerCase();
@@ -49,19 +49,29 @@ async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
             let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
             let txDestination = `0:${cleanTONAddress(txDestinationRaw)}`;
 
+            // ✅ Convertir todo a STRING para comparar correctamente
+            const txAmountStr = String(txAmountNano);
+            const expectedAmountStr = String(expectedAmountNano);
+            const txDestinationStr = String(txDestination);
+            const expectedAddressStr = String(expectedAddressTON);
+
             console.log("🔍 Comparando:", {
                 txHash,
                 txAmountNano,
-                txDestinationRaw,  // 🔹 Dirección antes de limpiar
-                txDestination,      // 🔹 Dirección después de limpiar
-                expectedAmountNano, // 🔹 Monto esperado en NanoTON
-                expectedAddressTON  // 🔹 Dirección esperada en formato TON con "0:"
+                txAmountStr,         // 🔹 Convertido a string
+                txDestinationRaw,    // 🔹 Dirección antes de limpiar
+                txDestination,       // 🔹 Dirección después de limpiar
+                txDestinationStr,    // 🔹 Convertido a string
+                expectedAmountNano,  // 🔹 Monto esperado en NanoTON
+                expectedAmountStr,   // 🔹 Convertido a string
+                expectedAddressTON,  // 🔹 Dirección esperada en formato TON con "0:"
+                expectedAddressStr   // 🔹 Convertido a string
             });
 
             return (
-                txHash === txid &&                     // ✅ TXID debe coincidir
-                txAmountNano === expectedAmountNano && // ✅ Monto en NanoTON debe coincidir
-                txDestination === expectedAddressTON   // ✅ Dirección debe coincidir con "0:"
+                txHash === txid &&                      // ✅ TXID debe coincidir
+                txAmountStr === expectedAmountStr &&    // ✅ Monto convertido a STRING debe coincidir
+                txDestinationStr === expectedAddressStr // ✅ Dirección convertida a STRING debe coincidir
             );
         });
 
