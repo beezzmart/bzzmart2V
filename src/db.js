@@ -46,28 +46,6 @@ async function query(sql, params = []) {
   }
 }
 
-// 📌 Crear tabla de transacciones si no existe
-async function createTransactionsTable() {
-  try {
-    await query(`
-      CREATE TABLE IF NOT EXISTS transactions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        txid VARCHAR(255) UNIQUE NOT NULL,
-        user_id INT NOT NULL,
-        amount DECIMAL(10, 2) NOT NULL,
-        type ENUM('bee', 'colony') NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    console.log("✅ Tabla 'transactions' verificada o creada.");
-  } catch (error) {
-    console.error("❌ Error al crear la tabla 'transactions':", error);
-  }
-}
-
-// Llamar a la función al iniciar el servidor
-
-createTransactionsTable();
 
 
 
