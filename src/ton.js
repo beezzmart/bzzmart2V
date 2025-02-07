@@ -1,12 +1,7 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para convertir TXID hexadecimal a Base64
-function hexToBase64(hex) {
-    return Buffer.from(hex, "hex").toString("base64");
-}
-
-// ✅ Verificar transacción en TonCenter (ajustada para formato Base64)
+// ✅ Verificar transacción en TonCenter
 async function verifyTONTransaction(txid, expectedAmount, telegramId) {
     const apiUrl = `https://toncenter.com/api/v2/getTransactions?address=${ton.publicAddress}&limit=50`;
 
@@ -21,18 +16,13 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
 
         console.log("📌 Verificando transacción...");
         console.log("🔹 TXID ingresado (Hex):", txid);
-
-        // 🔄 Convertir TXID a Base64 (porque TonCenter devuelve el hash en Base64)
-        const txidBase64 = hexToBase64(txid);
-        console.log("🔹 TXID convertido a Base64:", txidBase64);
-
         console.log("🔹 Últimas 50 transacciones:", transactions);
 
         // 🔍 Buscar la transacción correcta
         const validTransaction = transactions.find(tx =>
-            tx.transaction_id.hash === txidBase64 &&  // Ahora comparando en Base64
-            parseFloat(tx.value) / 1e9 === parseFloat(expectedAmount) &&
-            tx.out_msgs.some(msg => msg.destination.address === ton.publicAddress) // Verifica la wallet de destino
+            tx.in_msg && tx.in_msg.body_hash === txid && // Comparar con `body_hash` (Hex)
+            parseFloat(tx.in_msg.value) / 1e9 === parseFloat(expectedAmount) && // Monto en TON
+            tx.in_msg.destination.address === ton.publicAddress // Asegurar que la wallet destino es correcta
         );
 
         if (validTransaction) {
