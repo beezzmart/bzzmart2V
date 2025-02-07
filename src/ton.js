@@ -1,45 +1,40 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-async function verifyTONTransaction(txid, expectedAmount, telegramId) {
-    const apiUrl = `https://tonscan.org/tx/${txid}`;
+async function verifyTONTransaction(txid, expectedAmount) {
+    const apiUrl = `https://tonapi.io/v2/blockchain/transactions/${txid}`;
 
     try {
-        console.log("\n📌 Verificando transacción en TONSCAN...");
+        console.log("\n📌 Verificando transacción en TONAPI...");
         console.log("🔹 TXID ingresado:", txid);
         console.log("🔹 URL de consulta:", apiUrl);
 
-        // 🛠️ Hacemos la petición HTTP a TONSCAN
+        // Hacemos la petición HTTP a TONAPI
         const response = await axios.get(apiUrl);
-        const html = response.data;
+        const transaction = response.data;
 
-        console.log("\n🔍 HTML recibido (primeros 500 caracteres):");
-        console.log(html.substring(0, 500)); // Mostramos un fragmento del HTML para analizar
+        console.log("\n🔍 Respuesta de la API:");
+        console.log(transaction);
 
-        // 🔎 Intentamos extraer la dirección de destino y el monto recibido
-        const addressMatch = html.match(/To<\/div>\s*<div[^>]*>(EQ[^\s<]+)/);
-        const amountMatch = html.match(/Value Received TON<\/div>\s*<div[^>]*>([\d.]+) TON/);
-
-        if (!addressMatch || !amountMatch) {
-            console.log("❌ No se encontró información válida en TONSCAN.");
+        if (!transaction || !transaction.utime) {
+            console.log("❌ No se encontró información válida en TONAPI.");
             return false;
         }
 
-        const txDestination = addressMatch[1];  // 🔹 Dirección de destino en formato `EQ...`
-        const txAmount = parseFloat(amountMatch[1]); // 🔹 Monto recibido en TON
+        // Extraer datos de la transacción
+        const txDestination = transaction.out_msgs[0].destination.address;
+        const txAmount = parseFloat(transaction.out_msgs[0].value) / 1e9; // Convertir nanotons a TON
 
         console.log("🔍 Comparando:", {
+            txHash: txid,
             txAmount,
             txDestination,
             expectedAmount,
             expectedAddress: ton.publicAddress
         });
 
-        // ✅ Verificar si la transacción es válida
-        if (
-            txAmount === expectedAmount &&
-            txDestination === ton.publicAddress
-        ) {
+        // Verificar si la transacción es válida
+        if (txAmount === expectedAmount && txDestination === ton.publicAddress) {
             console.log("✅ Transacción válida encontrada.");
             return true;
         } else {
@@ -47,7 +42,7 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             return false;
         }
     } catch (error) {
-        console.error("❌ Error verificando transacción en TONSCAN:", error.message);
+        console.error("❌ Error verificando transacción en TONAPI:", error.message);
         return false;
     }
 }
