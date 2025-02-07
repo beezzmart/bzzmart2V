@@ -1,15 +1,10 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Extraer y limpiar dirección TON correctamente
+// ✅ Función para limpiar la dirección TON a formato HEX correcto
 function cleanTONAddress(address) {
     if (!address) return "";
-
-    // Eliminar el prefijo "0:" (workchain)
-    let cleaned = address.replace(/^0:/, "").toLowerCase();
-
-    // Asegurar que sean 64 caracteres exactos
-    return cleaned.length > 64 ? cleaned.slice(-64) : cleaned;
+    return address.replace(/^0:/, "").toLowerCase(); // Elimina el prefijo "0:"
 }
 
 // ✅ Verificar transacción en TON API
@@ -29,32 +24,32 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         console.log("🔹 TXID ingresado:", txid);
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
-        // 🔹 Convertir la dirección esperada de TON a HEX
+        // 🔹 Convertir dirección esperada a HEX (eliminar prefijo)
         let expectedAddressHex = cleanTONAddress(ton.publicAddress);
         console.log("🔹 Dirección esperada (HEX):", expectedAddressHex);
 
         // 🔍 Buscar la transacción correcta
         const validTransaction = transactions.find(tx => {
             const txHash = tx.hash;
-            const txAmount = parseInt(tx.in_msg?.value || tx.value || 0, 10); // Ya está en nanoTON
+            const txAmount = parseInt(tx.in_msg?.value || tx.value || 0, 10);
 
-            // 🔹 Obtener dirección destino y normalizarla
+            // 🔹 Normalizar dirección destino
             let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            let txDestination = cleanTONAddress(txDestinationRaw); // Normalizamos para comparar bien
+            let txDestination = cleanTONAddress(txDestinationRaw);
 
             console.log("🔍 Comparando:", {
                 txHash,
                 txAmount,
-                txDestinationRaw,  // 🔹 Dirección original antes de normalizar
-                txDestination,      // 🔹 Dirección después de normalizar
-                expectedAmount,     // 🔹 Comparación exacta con nanoTON
+                txDestinationRaw,  // 🔹 Dirección antes de limpiar
+                txDestination,      // 🔹 Dirección después de limpiar
+                expectedAmount,     // 🔹 Monto esperado
                 expectedAddressHex  // 🔹 Dirección esperada en HEX
             });
 
             return (
-                txHash === txid && // 🔹 TXID debe coincidir
-                txAmount === expectedAmount && // 🔹 Comparación exacta en nanoTON
-                txDestination === expectedAddressHex // 🔹 Comparación exacta en HEX
+                txHash === txid &&            // ✅ TXID debe coincidir
+                txAmount === expectedAmount && // ✅ Monto en nanoTON debe coincidir
+                txDestination === expectedAddressHex // ✅ Dirección debe coincidir
             );
         });
 
