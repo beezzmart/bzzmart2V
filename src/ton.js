@@ -6,11 +6,11 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
         console.log(`📌 Verificando transacción en TON API...`);
         console.log(`🔹 TXID ingresado: ${txid}`);
 
-        // URL de TON API para obtener la transacción específica
+        // URL de consulta a TON API
         const url = `https://tonapi.io/v2/blockchain/transactions/${txid}`;
         console.log(`🔹 URL de consulta: ${url}`);
 
-        // Hacer la petición HTTP a TON API
+        // Petición HTTP a la API
         const response = await axios.get(url);
         const transaction = response.data;
 
@@ -20,32 +20,37 @@ async function verifyTONTransaction(txid, expectedAmount, telegramId) {
             return false;
         }
 
-        // Extraer el monto y manejar posibles errores
+        // Extraer monto y dirección destino
         let txAmountNano = transaction.in_msg.value ?? 0; // Monto en NanoTON
         let txAmountTON = txAmountNano / 1e9; // Convertir a TON
-        const txDestination = transaction.in_msg.destination?.address || "No encontrado"; // Dirección destino real
+        const txDestination = transaction.in_msg.destination?.address || "No encontrado";
 
-        // Si no se encontró un monto válido, buscar en out_msgs
-        if (txAmountNano === 0 && transaction.out_msgs && transaction.out_msgs.length > 0) {
+        // Buscar en out_msgs si el monto en in_msg es 0
+        if (txAmountNano === 0 && transaction.out_msgs.length > 0) {
             txAmountNano = transaction.out_msgs[0]?.value ?? 0;
             txAmountTON = txAmountNano / 1e9;
         }
+
+        // Convertir expectedAmount a NanoTON correctamente
+        const expectedAmountNano = expectedAmount * 1e9;
+
+        // Formatear dirección esperada en formato "0:..."
+        const expectedAddressFormatted = ton.publicAddress.startsWith("0:")
+            ? ton.publicAddress
+            : `0:${ton.publicAddress.slice(-64)}`;
 
         console.log("🔍 Datos de la transacción obtenidos:", {
             txHash: txid,
             txAmountNano,
             txAmountTON,
             txDestination,
-            expectedAmountNano: expectedAmount * 1e9, // Convertido a NanoTON
+            expectedAmountNano,
             expectedAmountTON: expectedAmount,
-            expectedAddress: ton.publicAddress
+            expectedAddress: expectedAddressFormatted
         });
 
-        // Validar la transacción
-        if (
-            txDestination === ton.publicAddress &&
-            txAmountNano === expectedAmount * 1e9
-        ) {
+        // Validar transacción (monto y dirección deben coincidir)
+        if (txDestination === expectedAddressFormatted && txAmountNano === expectedAmountNano) {
             console.log("✅ ¡Transacción válida!");
             return true;
         } else {
