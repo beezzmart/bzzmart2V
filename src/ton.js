@@ -6,58 +6,50 @@ function cleanTONAddress(address) {
     if (!address) return "";
     return address.replace(/^0:/, "").toLowerCase();
 }
+// Función para verificar transacción en TON API
+async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
+  try {
+    // Llamada a la API de TON para obtener la transacción
+    const transaction = await getTONTransaction(txid);  // Asegúrate de implementar la llamada API correctamente
 
-// ✅ Función principal: Verifica una transacción TON
-async function verifyTONTransaction(txid, expectedAmount, expectedSender) {
-    try {
-        const apiUrl = `https://tonapi.io/v2/blockchain/transactions/${txid}`;
-        const response = await axios.get(apiUrl);
-        const txData = response.data;
+    // Verificar que la transacción existe
+    if (!transaction || transaction.success === false) {
+      console.error("❌ Transacción no encontrada o fallida.");
+      return false;
+    }
 
-        if (!txData) {
-            console.log("❌ No se encontró información de la transacción.");
-            return false;
-        }
+    // Verificar que el monto de la transacción sea igual al costo
+    if (transaction.total_fees !== totalCost) {
+      console.error("❌ El monto de la transacción no coincide con la compra.");
+      return false;
+    }
 
-        console.log("📌 Verificando transacción en TON API...");
-        console.log("🔹 TXID ingresado:", txid);
-        console.log("🔹 Datos obtenidos:", txData);
+    // Verificar que la wallet de destino sea la wallet del usuario
+    if (transaction.account.address !== senderWallet) {
+      console.error("❌ La dirección de la wallet de destino no es la correcta.");
+      return false;
+    }
 
-        // ✅ Extraer los datos importantes
-        const txHash = txData.hash;
-        const txAmountNano = parseInt(txData.amount || 0, 10); // ✅ Monto en nanoTON
-        const txSender = cleanTONAddress(txData.in_msg?.source?.account_address || "");
-        const txReceiver = cleanTONAddress(txData.in_msg?.destination?.account_address || "");
+    // Verificar que la wallet desde donde se envió es la correcta
+    if (transaction.in_msg.destination.address !== senderWallet) {
+      console.error("❌ La wallet desde donde se envió no coincide.");
+      return false;
+    }
 
-        // ✅ Wallet de la app (donde deben recibir los fondos)
-        const expectedReceiver = cleanTONAddress(ton.publicAddress);
+    // Verificar que el usuario que realizó la compra es el mismo que el que la está haciendo
+    const transactionUser = await query("SELECT user_id FROM transactions WHERE txid = ?", [txid]);
+    if (transactionUser.length === 0 || transactionUser[0].user_id !== userId) {
+      console.error("❌ El usuario no coincide con el que realizó la transacción.");
+      return false;
+    }
 
-        console.log("🔍 Comparando datos...");
-        console.log({
-            txHash,
-            txAmountNano,
-            txSender,
-            txReceiver,
-            expectedAmount,
-            expectedSender,
-            expectedReceiver
-        });
+    return true;
+  } catch (error) {
+    console.error("❌ Error en la verificación de la transacción:", error);
+    return false;
+  }
+}
 
-        // 🔹 Validaciones
-        if (txReceiver !== expectedReceiver) {
-            console.log("❌ La transacción no fue enviada a la wallet de la app.");
-            return false;
-        }
-
-        if (txAmountNano !== expectedAmount) {
-            console.log("❌ El monto de la transacción no coincide.");
-            return false;
-        }
-
-        if (expectedSender && txSender !== expectedSender) {
-            console.log("❌ El remitente no coincide con el usuario esperado.");
-            return false;
-        }
 
         console.log("✅ Transacción válida.");
         return true;
