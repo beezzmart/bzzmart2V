@@ -222,17 +222,20 @@ router.post("/add_bee", async (req, res) => {
       return res.status(400).json({ success: false, error: "Esta transacción ya ha sido utilizada." });
     }
 
-    // Verificar la transacción en TonAPI
+    // Verificar la transacción en TON API
     const transactionValid = await verifyTONTransaction(txid, totalCost);
     if (!transactionValid) {
       return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada. Verifica el TXID." });
     }
 
     // 🔹 Crear múltiples filas para la inserción
-    const beeInserts = Array.from({ length: quantity }, () => [colonyId, beeType, new Date()]);
+    const beeInserts = [];
+    for (let i = 0; i < quantity; i++) {
+      beeInserts.push([colonyId, beeType, new Date()]);
+    }
 
-    // 🔹 Insertar todas las abejas en una sola consulta SQL correctamente formateada
-    await query("INSERT INTO bees (colony_id, type, birth_date) VALUES ?", [beeInserts]);
+    // 🔹 Insertar todas las abejas en una sola consulta SQL
+    await query("INSERT INTO bees (colony_id, type, birth_date) VALUES " + beeInserts.map(() => "(?, ?, ?)").join(", "), beeInserts.flat());
 
     // Convertir de nanoTON a TON
     const amountTON = totalCost / 1e9;
