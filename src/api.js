@@ -226,7 +226,7 @@ router.post("/add_bee", async (req, res) => {
     }
 
     // ✅ Verificar la transacción en TON API
-    const transactionValid = await verifyTONTransaction(txid, totalCost, senderWallet);
+    const transactionValid = await verifyTONTransaction(txid, totalCost, senderWallet, userId);
     if (!transactionValid) {
       return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada. Verifica el TXID." });
     }
@@ -257,6 +257,7 @@ router.post("/add_bee", async (req, res) => {
     res.status(500).json({ success: false, error: "Error interno del servidor." });
   }
 });
+
 
 
  
