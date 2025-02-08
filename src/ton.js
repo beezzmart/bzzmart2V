@@ -1,10 +1,14 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para limpiar dirección (remueve "0:", minúsculas, sin espacios)
-function cleanTONAddress(address) {
-    if (!address) return "";
-    return address.replace(/^0:/, "").trim().toLowerCase();
+// ✅ Función para convertir HEX a Base64 (TON formato estándar)
+function convertHexToBase64(hex) {
+    try {
+        return Buffer.from(hex.replace(/^0:/, ""), "hex").toString("base64");
+    } catch (error) {
+        console.error("❌ Error convirtiendo dirección HEX a Base64:", error.message);
+        return "";
+    }
 }
 
 // ✅ Verificar transacción en TON API
@@ -24,42 +28,32 @@ async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
         console.log("🔹 TXID ingresado:", txid);
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
-        // ✅ Convertimos la dirección esperada a formato TON correcto
-        let expectedAddressTON = `0:${cleanTONAddress(ton.publicAddress)}`.trim().toLowerCase();
-        console.log("🔹 Dirección esperada (TON):", expectedAddressTON);
+        // ✅ Convertimos la dirección esperada de Base64 a HEX
+        let expectedAddressBase64 = ton.publicAddress;
+        console.log("🔹 Dirección esperada (Base64 TON):", expectedAddressBase64);
 
         // 🔍 Buscar la transacción correcta
         const validTransaction = transactions.find(tx => {
             const txHash = tx.hash;
             const txAmountNano = parseInt(tx.in_msg?.value || tx.value || 0, 10);
 
-            // 🔹 Normalizar dirección destino
+            // 🔹 Convertimos dirección destino de HEX a Base64 para igualar formatos
             let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            let txDestination = `0:${cleanTONAddress(txDestinationRaw)}`.trim().toLowerCase();
-
-            // ✅ NORMALIZAMOS TODO PARA COMPARACIÓN SEGURA
-            const txAmountStr = String(txAmountNano).trim();
-            const expectedAmountStr = String(expectedAmountNano).trim();
-            const txDestinationStr = String(txDestination).trim();
-            const expectedAddressStr = String(expectedAddressTON).trim();
+            let txDestinationBase64 = convertHexToBase64(txDestinationRaw);
 
             console.log("🔍 Comparando:", {
                 txHash,
                 txAmountNano,
-                txAmountStr,         // 🔹 Convertido a string y sin espacios
-                txDestinationRaw,    // 🔹 Dirección antes de limpiar
-                txDestination,       // 🔹 Dirección después de limpiar
-                txDestinationStr,    // 🔹 Convertido a string
-                expectedAmountNano,  // 🔹 Monto esperado en NanoTON
-                expectedAmountStr,   // 🔹 Convertido a string
-                expectedAddressTON,  // 🔹 Dirección esperada en formato TON con "0:"
-                expectedAddressStr   // 🔹 Convertido a string
+                txDestinationRaw,      // 🔹 Dirección en HEX antes de conversión
+                txDestinationBase64,   // 🔹 Dirección convertida a Base64
+                expectedAmountNano,    // 🔹 Monto esperado en nanoTON
+                expectedAddressBase64  // 🔹 Dirección esperada en formato Base64
             });
 
             return (
                 txHash.toLowerCase().trim() === txid.toLowerCase().trim() && // ✅ TXID debe coincidir
-                txAmountStr === expectedAmountStr &&                          // ✅ Monto en nanoTON debe coincidir
-                txDestinationStr === expectedAddressStr                      // ✅ Dirección debe coincidir con mismo formato
+                txAmountNano === expectedAmountNano &&                      // ✅ Monto en nanoTON debe coincidir
+                txDestinationBase64 === expectedAddressBase64               // ✅ Dirección en Base64 debe coincidir
             );
         });
 
