@@ -43,12 +43,7 @@ async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
       return false;
     }
 
-    return true;
-  } catch (error) {
-    console.error("❌ Error en la verificación de la transacción:", error);
-    return false;
-  }
-}
+
 
 
         console.log("✅ Transacción válida.");
