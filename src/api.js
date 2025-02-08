@@ -295,19 +295,29 @@ router.post("/buy_colony", async (req, res) => {
       return res.status(400).json({ success: false, error: "Esta transacción ya ha sido utilizada." });
     }
 
-    // Verificar la transacción en Tonviewer
+    // Verificar la transacción en TonAPI
     const transactionValid = await verifyTONTransaction(txid, colonyCost);
     if (!transactionValid) {
       return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada. Verifica el TXID." });
     }
 
     // Agregar la colmena a la base de datos
-  await query("INSERT INTO colonies (user_id, colony_name, type) VALUES (?, ?, ?)", [userId, `Colmena ${colonyType}`, colonyType]);
-const amountTON = nanoTON / 1e9; // Convierte de nanoTON a TON
-    
+    await query("INSERT INTO colonies (user_id, colony_name, type) VALUES (?, ?, ?)", [
+      userId,
+      `Colmena ${colonyType}`,
+      colonyType
+    ]);
+
+    // Convertir de nanoTON a TON
+    const amountTON = colonyCost / 1e9; 
 
     // Guardar la transacción para evitar reutilización
-    await query("INSERT INTO transactions (txid, user_id, amount, type) VALUES (?, ?, ?, ?)", [txid, userId, ${amountTON}, "colony"]);
+    await query("INSERT INTO transactions (txid, user_id, amount, type) VALUES (?, ?, ?, ?)", [
+      txid,
+      userId,
+      amountTON, // ✅ Arreglado aquí (sin template literals `${}` en SQL)
+      "colony"
+    ]);
 
     res.json({ success: true, message: "✅ Colmena comprada con éxito." });
   } catch (error) {
