@@ -160,11 +160,12 @@ router.post("/collect_nectar", async (req, res) => {
 
 // 📌 Ruta: Comprar abeja
 router.post("/add_bee", async (req, res) => {
-  const { id: telegramId, colonyId, beeType, txid, quantity } = req.body;
+  const { id: telegramId, colonyId, beeType, txid, senderWallet, quantity } = req.body;
 
-  if (!telegramId || !colonyId || !beeType || !quantity || !txid) {
+  if (!telegramId || !colonyId || !beeType || !quantity || !txid || !senderWallet) {
     return res.status(400).json({ success: false, error: "Faltan datos necesarios." });
   }
+
 
   try {
     const user = await query("SELECT id FROM users WHERE telegram_id = ?", [telegramId]);
@@ -222,10 +223,11 @@ router.post("/add_bee", async (req, res) => {
       return res.status(400).json({ success: false, error: "Esta transacción ya ha sido utilizada." });
     }
 
-const transactionValid = await verifyTONTransaction(txid, totalCost, senderWallet);
-if (!transactionValid) {
-    return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada. Verifica el TXID." });
-}
+ // ✅ Verificar la transacción en TON API
+    const transactionValid = await verifyTONTransaction(txid, totalCost, senderWallet);
+    if (!transactionValid) {
+      return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada. Verifica el TXID." });
+    }
 
 
 
@@ -264,9 +266,9 @@ if (!transactionValid) {
 
 // 📌 Ruta: Comprar colmena
 router.post("/buy_colony", async (req, res) => {
-  const { id: telegramId, colonyType, txid } = req.body;
+  const { id: telegramId, colonyType, txid, senderWallet } = req.body;
 
-  if (!telegramId || !txid || !colonyType) {
+  if (!telegramId || !txid || !colonyType || !senderWallet) {
     return res.status(400).json({ success: false, error: "Faltan datos necesarios." });
   }
 
@@ -302,11 +304,12 @@ router.post("/buy_colony", async (req, res) => {
       return res.status(400).json({ success: false, error: "Esta transacción ya ha sido utilizada." });
     }
 
-    // Verificar la transacción en TonAPI
-   const transactionValid = await verifyTONTransaction(txid, colonyCost, senderWallet);
-if (!transactionValid) {
-    return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada. Verifica el TXID." });
-}
+   
+   // ✅ Verificar la transacción en TON API con la wallet del usuario
+    const transactionValid = await verifyTONTransaction(txid, colonyCost, senderWallet);
+    if (!transactionValid) {
+      return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada. Verifica el TXID." });
+    }
 
 
     // Agregar la colmena a la base de datos
