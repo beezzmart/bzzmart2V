@@ -10,7 +10,7 @@ function cleanTONAddress(address) {
 // Función para obtener los detalles de la transacción de la API de TON
 async function getTONTransaction(txid) {
     try {
-        const response = await axios.get(`https://tonapi.io/api/v1/transactions/${txid}`); // Ajusta esta URL según la documentación de la API TON
+        const response = await axios.get(`https://tonapi.io/v2/blockchain/transactions/${txid}`); // Ajusta esta URL según la documentación de la API TON
         return response.data; // Devuelve los datos de la transacción
     } catch (error) {
         console.error("❌ Error al obtener la transacción de la API de TON:", error.response?.data || error.message);
