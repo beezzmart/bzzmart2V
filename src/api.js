@@ -327,12 +327,7 @@ router.post("/buy_colony", async (req, res) => {
   }
 });
 
-    res.json({ success: true, message: "✅ Colmena comprada con éxito." });
-  } catch (error) {
-    console.error("Error al comprar colmena:", error);
-    res.status(500).json({ success: false, error: "Error interno del servidor." });
-  }
-});
+
 
 
 
