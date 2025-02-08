@@ -228,12 +228,14 @@ router.post("/add_bee", async (req, res) => {
       return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada. Verifica el TXID." });
     }
 
-    // 🔹 Agregar las abejas a la colmena con `NOW()`
-    const beeInserts = Array(quantity).fill().map(() => [colonyId, beeType]);
-    await query("INSERT INTO bees (colony_id, type, birth_date) VALUES ?", [beeInserts.map(bee => [...bee, new Date()])]);
+    // 🔹 Crear múltiples filas para la inserción
+    const beeInserts = Array.from({ length: quantity }, () => [colonyId, beeType, new Date()]);
+
+    // 🔹 Insertar todas las abejas en una sola consulta SQL correctamente formateada
+    await query("INSERT INTO bees (colony_id, type, birth_date) VALUES ?", [beeInserts]);
 
     // Convertir de nanoTON a TON
-    const amountTON = totalCost / 1e9; 
+    const amountTON = totalCost / 1e9;
 
     // Guardar la transacción para evitar reutilización
     await query("INSERT INTO transactions (txid, user_id, amount, type) VALUES (?, ?, ?, ?)", [
@@ -248,10 +250,11 @@ router.post("/add_bee", async (req, res) => {
       message: `✅ ${quantity} abeja(s) ${beeType} añadida(s) a la colmena ${colonyId}.`,
     });
   } catch (error) {
-    console.error("Error al agregar abejas:", error);
+    console.error("❌ Error al agregar abejas:", error);
     res.status(500).json({ success: false, error: "Error interno del servidor." });
   }
 });
+
 
 
 
