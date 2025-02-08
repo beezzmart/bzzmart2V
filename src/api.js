@@ -302,7 +302,7 @@ router.post("/buy_colony", async (req, res) => {
     }
 
     // Agregar la colmena a la base de datos
-    await query("INSERT INTO colonies (user_id, colony_name, type, create_at) VALUES (?, ?, ?, NOW())", [
+    await query("INSERT INTO colonies (user_id, colony_name, type, created_at) VALUES (?, ?, ?, NOW())", [
       userId,
       `Colmena ${colonyType}`,
       colonyType
