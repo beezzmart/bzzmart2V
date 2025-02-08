@@ -1,73 +1,68 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para obtener dirección en Base64 desde TON API
-async function getBase64Address(hexAddress) {
-    try {
-        const apiUrl = `https://tonapi.io/v2/blockchain/accounts/${hexAddress}`;
-        const response = await axios.get(apiUrl);
-        return response.data.address || ""; // 🔹 Devuelve la dirección en Base64
-    } catch (error) {
-        console.error("❌ Error obteniendo dirección Base64 desde TON API:", error.message);
-        return "";
-    }
+// ✅ Función para limpiar direcciones (elimina "0:" y las pone en minúsculas)
+function cleanTONAddress(address) {
+    if (!address) return "";
+    return address.replace(/^0:/, "").toLowerCase();
 }
 
-// ✅ Verificar transacción en TON API
-async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
-    const apiUrl = `https://tonapi.io/v2/blockchain/accounts/${ton.publicAddress}/transactions?limit=50`;
-
+// ✅ Función principal: Verifica una transacción TON
+async function verifyTONTransaction(txid, expectedAmount, expectedSender) {
     try {
+        const apiUrl = `https://tonapi.io/v2/blockchain/transactions/${txid}`;
         const response = await axios.get(apiUrl);
-        const transactions = response.data.transactions;
+        const txData = response.data;
 
-        if (!transactions || transactions.length === 0) {
-            console.log("❌ No se encontraron transacciones en TON API.");
+        if (!txData) {
+            console.log("❌ No se encontró información de la transacción.");
             return false;
         }
 
-        console.log("📌 Verificando transacción...");
+        console.log("📌 Verificando transacción en TON API...");
         console.log("🔹 TXID ingresado:", txid);
-        console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
+        console.log("🔹 Datos obtenidos:", txData);
 
-        // ✅ Obtener la dirección esperada en Base64 desde TON API
-        let expectedAddressBase64 = await getBase64Address(ton.publicAddress);
-        console.log("🔹 Dirección esperada (Base64 TON):", expectedAddressBase64);
+        // ✅ Extraer los datos importantes
+        const txHash = txData.hash;
+        const txAmountNano = parseInt(txData.amount || 0, 10); // ✅ Monto en nanoTON
+        const txSender = cleanTONAddress(txData.in_msg?.source?.account_address || "");
+        const txReceiver = cleanTONAddress(txData.in_msg?.destination?.account_address || "");
 
-        // 🔍 Buscar la transacción correcta
-        const validTransaction = await Promise.all(transactions.map(async (tx) => {
-            const txHash = tx.hash;
-            const txAmountNano = parseInt(tx.in_msg?.value || tx.value || 0, 10);
+        // ✅ Wallet de la app (donde deben recibir los fondos)
+        const expectedReceiver = cleanTONAddress(ton.publicAddress);
 
-            // 🔹 Obtener la dirección en Base64 desde TON API
-            let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            let txDestinationBase64 = await getBase64Address(txDestinationRaw);
+        console.log("🔍 Comparando datos...");
+        console.log({
+            txHash,
+            txAmountNano,
+            txSender,
+            txReceiver,
+            expectedAmount,
+            expectedSender,
+            expectedReceiver
+        });
 
-            console.log("🔍 Comparando:", {
-                txHash,
-                txAmountNano,
-                txDestinationRaw,      // 🔹 Dirección en HEX antes de conversión
-                txDestinationBase64,   // 🔹 Dirección en Base64 obtenida desde TON API
-                expectedAmountNano,    // 🔹 Monto esperado en nanoTON
-                expectedAddressBase64  // 🔹 Dirección esperada en formato Base64
-            });
-
-            return (
-                txHash.toLowerCase().trim() === txid.toLowerCase().trim() && // ✅ TXID debe coincidir
-                txAmountNano === expectedAmountNano &&                      // ✅ Monto en nanoTON debe coincidir
-                txDestinationBase64 === expectedAddressBase64               // ✅ Dirección en Base64 debe coincidir
-            );
-        }));
-
-        if (validTransaction.includes(true)) {
-            console.log("✅ TRANSACCIÓN VÁLIDA ENCONTRADA");
-            return true;
-        } else {
-            console.log("❌ No se encontró una transacción válida con este TXID.");
+        // 🔹 Validaciones
+        if (txReceiver !== expectedReceiver) {
+            console.log("❌ La transacción no fue enviada a la wallet de la app.");
             return false;
         }
+
+        if (txAmountNano !== expectedAmount) {
+            console.log("❌ El monto de la transacción no coincide.");
+            return false;
+        }
+
+        if (expectedSender && txSender !== expectedSender) {
+            console.log("❌ El remitente no coincide con el usuario esperado.");
+            return false;
+        }
+
+        console.log("✅ Transacción válida.");
+        return true;
     } catch (error) {
-        console.error("❌ Error verificando transacción TON API:", error.response?.data || error.message);
+        console.error("❌ Error verificando transacción:", error.response?.data || error.message);
         return false;
     }
 }
