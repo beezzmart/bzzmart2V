@@ -158,35 +158,26 @@ router.post("/collect_nectar", async (req, res) => {
 
 
 
-// Ruta: Comprar abeja
+// 📌 Ruta: Comprar abeja
 router.post("/add_bee", async (req, res) => {
   const { id: telegramId, colonyId, beeType, txid, quantity } = req.body;
 
   if (!telegramId || !colonyId || !beeType || !quantity || !txid) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Faltan datos necesarios." });
+    return res.status(400).json({ success: false, error: "Faltan datos necesarios." });
   }
 
   try {
     const user = await query("SELECT id FROM users WHERE telegram_id = ?", [telegramId]);
     if (user.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Usuario no encontrado." });
+      return res.status(404).json({ success: false, error: "Usuario no encontrado." });
     }
 
     const userId = user[0].id;
 
     // Verificar la colmena
-    const colony = await query(
-      "SELECT id, type FROM colonies WHERE id = ? AND user_id = ?",
-      [colonyId, userId],
-    );
+    const colony = await query("SELECT id, type FROM colonies WHERE id = ? AND user_id = ?", [colonyId, userId]);
     if (colony.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Colmena no encontrada." });
+      return res.status(404).json({ success: false, error: "Colmena no encontrada." });
     }
 
     const colonyType = colony[0].type; // Tipo de colmena
@@ -213,7 +204,7 @@ router.post("/add_bee", async (req, res) => {
       });
     }
 
-    if (beeCount[0].total >= maxAllowed) {
+    if (beeCount[0].total + quantity > maxAllowed) {
       return res.status(400).json({ success: false, error: `No puedes tener más de ${maxAllowed} abejas ${beeType} en esta colmena.` });
     }
 
@@ -231,28 +222,37 @@ router.post("/add_bee", async (req, res) => {
       return res.status(400).json({ success: false, error: "Esta transacción ya ha sido utilizada." });
     }
 
-    // Verificar la transacción en Tonviewer
+    // Verificar la transacción en TonAPI
     const transactionValid = await verifyTONTransaction(txid, totalCost);
     if (!transactionValid) {
       return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada. Verifica el TXID." });
     }
 
-    // Agregar las abejas a la colmena
-    const beeInserts = Array(quantity).fill([colonyId, beeType, new Date()]);
-    await query("INSERT INTO bees (colony_id, type, birth_date) VALUES ?", [beeInserts]);
+    // 🔹 Agregar las abejas a la colmena con `NOW()`
+    const beeInserts = Array(quantity).fill().map(() => [colonyId, beeType]);
+    await query("INSERT INTO bees (colony_id, type, birth_date) VALUES ?", [beeInserts.map(bee => [...bee, new Date()])]);
+
+    // Convertir de nanoTON a TON
+    const amountTON = totalCost / 1e9; 
 
     // Guardar la transacción para evitar reutilización
-    await query("INSERT INTO transactions (txid, user_id, amount, type) VALUES (?, ?, ?, ?)", [txid, userId, totalCost, "bee"]);
+    await query("INSERT INTO transactions (txid, user_id, amount, type) VALUES (?, ?, ?, ?)", [
+      txid,
+      userId,
+      amountTON,
+      "bee"
+    ]);
 
     res.json({
       success: true,
-      message: `${quantity} abeja(s) ${beeType} añadida(s) a la colmena ${colonyId}.`,
+      message: `✅ ${quantity} abeja(s) ${beeType} añadida(s) a la colmena ${colonyId}.`,
     });
   } catch (error) {
     console.error("Error al agregar abejas:", error);
     res.status(500).json({ success: false, error: "Error interno del servidor." });
   }
 });
+
 
 
 // 📌 Ruta: Comprar colmena
