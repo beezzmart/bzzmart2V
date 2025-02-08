@@ -1,12 +1,14 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para convertir HEX a Base64 (TON formato estándar)
-function convertHexToBase64(hex) {
+// ✅ Función para obtener dirección en Base64 desde TON API
+async function getBase64Address(hexAddress) {
     try {
-        return Buffer.from(hex.replace(/^0:/, ""), "hex").toString("base64");
+        const apiUrl = `https://tonapi.io/v2/blockchain/accounts/${hexAddress}`;
+        const response = await axios.get(apiUrl);
+        return response.data.address || ""; // 🔹 Devuelve la dirección en Base64
     } catch (error) {
-        console.error("❌ Error convirtiendo dirección HEX a Base64:", error.message);
+        console.error("❌ Error obteniendo dirección Base64 desde TON API:", error.message);
         return "";
     }
 }
@@ -28,24 +30,24 @@ async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
         console.log("🔹 TXID ingresado:", txid);
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
-        // ✅ Convertimos la dirección esperada de Base64 a HEX
-        let expectedAddressBase64 = ton.publicAddress;
+        // ✅ Obtener la dirección esperada en Base64 desde TON API
+        let expectedAddressBase64 = await getBase64Address(ton.publicAddress);
         console.log("🔹 Dirección esperada (Base64 TON):", expectedAddressBase64);
 
         // 🔍 Buscar la transacción correcta
-        const validTransaction = transactions.find(tx => {
+        const validTransaction = await Promise.all(transactions.map(async (tx) => {
             const txHash = tx.hash;
             const txAmountNano = parseInt(tx.in_msg?.value || tx.value || 0, 10);
 
-            // 🔹 Convertimos dirección destino de HEX a Base64 para igualar formatos
+            // 🔹 Obtener la dirección en Base64 desde TON API
             let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            let txDestinationBase64 = convertHexToBase64(txDestinationRaw);
+            let txDestinationBase64 = await getBase64Address(txDestinationRaw);
 
             console.log("🔍 Comparando:", {
                 txHash,
                 txAmountNano,
                 txDestinationRaw,      // 🔹 Dirección en HEX antes de conversión
-                txDestinationBase64,   // 🔹 Dirección convertida a Base64
+                txDestinationBase64,   // 🔹 Dirección en Base64 obtenida desde TON API
                 expectedAmountNano,    // 🔹 Monto esperado en nanoTON
                 expectedAddressBase64  // 🔹 Dirección esperada en formato Base64
             });
@@ -55,10 +57,10 @@ async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
                 txAmountNano === expectedAmountNano &&                      // ✅ Monto en nanoTON debe coincidir
                 txDestinationBase64 === expectedAddressBase64               // ✅ Dirección en Base64 debe coincidir
             );
-        });
+        }));
 
-        if (validTransaction) {
-            console.log("✅ TRANSACCIÓN VÁLIDA ENCONTRADA:", validTransaction);
+        if (validTransaction.includes(true)) {
+            console.log("✅ TRANSACCIÓN VÁLIDA ENCONTRADA");
             return true;
         } else {
             console.log("❌ No se encontró una transacción válida con este TXID.");
