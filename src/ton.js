@@ -1,22 +1,10 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para limpiar dirección HEX y asegurar formato correcto
+// ✅ Función para limpiar dirección (remueve "0:", minúsculas, sin espacios)
 function cleanTONAddress(address) {
     if (!address) return "";
-    return address.replace(/^0:/, "").trim().toLowerCase(); // 🔹 Elimina "0:" y espacios invisibles
-}
-
-// ✅ Función para convertir Base64 a dirección HEX con "0:" al inicio
-function convertBase64ToTONAddress(base64Address) {
-    try {
-        const buffer = Buffer.from(base64Address, "base64");
-        const hexAddress = buffer.toString("hex").toLowerCase();
-        return `0:${hexAddress.slice(-64)}`.trim();
-    } catch (error) {
-        console.error("❌ Error convirtiendo dirección Base64 a TON:", error.message);
-        return "";
-    }
+    return address.replace(/^0:/, "").trim().toLowerCase();
 }
 
 // ✅ Verificar transacción en TON API
@@ -36,8 +24,8 @@ async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
         console.log("🔹 TXID ingresado:", txid);
         console.log("🔹 Últimas transacciones recibidas:", transactions.map(tx => tx.hash));
 
-        // ✅ Convertimos la dirección esperada al formato correcto
-        let expectedAddressTON = `0:${cleanTONAddress(convertBase64ToTONAddress(ton.publicAddress))}`.trim();
+        // ✅ Convertimos la dirección esperada a formato TON correcto
+        let expectedAddressTON = `0:${cleanTONAddress(ton.publicAddress)}`.trim().toLowerCase();
         console.log("🔹 Dirección esperada (TON):", expectedAddressTON);
 
         // 🔍 Buscar la transacción correcta
@@ -47,9 +35,9 @@ async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
 
             // 🔹 Normalizar dirección destino
             let txDestinationRaw = tx.in_msg?.destination?.account_address || tx.account?.address || "";
-            let txDestination = `0:${cleanTONAddress(txDestinationRaw)}`.trim();
+            let txDestination = `0:${cleanTONAddress(txDestinationRaw)}`.trim().toLowerCase();
 
-            // ✅ FORZAR TODO A STRING PARA EVITAR ERRORES DE COMPARACIÓN
+            // ✅ NORMALIZAMOS TODO PARA COMPARACIÓN SEGURA
             const txAmountStr = String(txAmountNano).trim();
             const expectedAmountStr = String(expectedAmountNano).trim();
             const txDestinationStr = String(txDestination).trim();
@@ -58,7 +46,7 @@ async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
             console.log("🔍 Comparando:", {
                 txHash,
                 txAmountNano,
-                txAmountStr,         // 🔹 Convertido a string
+                txAmountStr,         // 🔹 Convertido a string y sin espacios
                 txDestinationRaw,    // 🔹 Dirección antes de limpiar
                 txDestination,       // 🔹 Dirección después de limpiar
                 txDestinationStr,    // 🔹 Convertido a string
@@ -69,9 +57,9 @@ async function verifyTONTransaction(txid, expectedAmountNano, telegramId) {
             });
 
             return (
-                String(txHash).trim() === String(txid).trim() &&  // ✅ TXID debe coincidir
-                txAmountStr === expectedAmountStr &&             // ✅ Monto en nanoTON (convertido a STRING) debe coincidir
-                txDestinationStr === expectedAddressStr          // ✅ Dirección (convertida a STRING) debe coincidir
+                txHash.toLowerCase().trim() === txid.toLowerCase().trim() && // ✅ TXID debe coincidir
+                txAmountStr === expectedAmountStr &&                          // ✅ Monto en nanoTON debe coincidir
+                txDestinationStr === expectedAddressStr                      // ✅ Dirección debe coincidir con mismo formato
             );
         });
 
