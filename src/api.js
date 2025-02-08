@@ -302,7 +302,11 @@ router.post("/buy_colony", async (req, res) => {
     }
 
     // Agregar la colmena a la base de datos
-    await query("INSERT INTO colonies (user_id, colony_name, type) VALUES (?, ?, ?)", [userId, `Colmena ${colonyType}`, colonyType]);
+    //await query("INSERT INTO colonies (user_id, colony_name, type) VALUES (?, ?, ?)", [userId, `Colmena ${colonyType}`, colonyType]);
+const amountTON = nanoTON / 1e9; // Convierte de nanoTON a TON
+    
+const query = 'INSERT INTO transactions (txid, user_id, amount, type) VALUES (?, ?, ?, ?)';
+await db.execute(query, [txid, userId, amountTON, type]);
 
     // Guardar la transacción para evitar reutilización
     await query("INSERT INTO transactions (txid, user_id, amount, type) VALUES (?, ?, ?, ?)", [txid, userId, colonyCost, "colony"]);
