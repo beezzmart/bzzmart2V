@@ -162,8 +162,11 @@ router.post("/collect_nectar", async (req, res) => {
 router.post("/add_bee", async (req, res) => {
   const { id: telegramId, colonyId, beeType, txid, senderWallet, quantity } = req.body;
 
+  // ✅ Depuración: Mostrar los datos recibidos en el backend
+  console.log("🔍 Datos recibidos en backend:", { telegramId, colonyId, beeType, txid, senderWallet, quantity });
+
   if (!telegramId || !colonyId || !beeType || !quantity || !txid || !senderWallet) {
-    return res.status(400).json({ success: false, error: "Faltan datos necesarios." });
+    return res.status(400).json({ success: false, error: "⚠️ Faltan datos necesarios en la API." });
   }
 
 
