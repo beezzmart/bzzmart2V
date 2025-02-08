@@ -157,7 +157,6 @@ router.post("/collect_nectar", async (req, res) => {
 
 
 
-
 // 📌 Ruta: Comprar abeja
 router.post("/add_bee", async (req, res) => {
   const { id: telegramId, colonyId, beeType, txid, senderWallet, quantity } = req.body;
@@ -260,10 +259,6 @@ router.post("/add_bee", async (req, res) => {
 
 
 
- 
-
-
-
 // 📌 Ruta: Comprar colmena
 router.post("/buy_colony", async (req, res) => {
   const { id: telegramId, colonyType, txid, senderWallet } = req.body;
@@ -301,7 +296,7 @@ router.post("/buy_colony", async (req, res) => {
     }
 
     // ✅ Verificar la transacción en TON API
-    const transactionValid = await verifyTONTransaction(txid, colonyCost, senderWallet);
+    const transactionValid = await verifyTONTransaction(txid, colonyCost, senderWallet, userId);
     if (!transactionValid) {
       return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada. Verifica el TXID." });
     }
@@ -327,6 +322,7 @@ router.post("/buy_colony", async (req, res) => {
     res.status(500).json({ success: false, error: "Error interno del servidor." });
   }
 });
+
 
 
 
