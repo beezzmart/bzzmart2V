@@ -55,7 +55,16 @@ async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
 
         // ✅ Validar la wallet de destino correcta (sin cambiar a minúsculas)
         const receiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
-        const expectedReceiverWallet = convertWalletToStandardFormat(ton.publicAddress); // Convertimos a formato estándar
+        
+        // 💥 Aquí verificamos si ton.publicAddress está bien definido y lo usamos como la wallet de destino esperada
+        let expectedReceiverWallet = ton.publicAddress;
+        
+        if (!expectedReceiverWallet) {
+            console.error("❌ No se ha definido la wallet de destino esperada en la configuración.");
+            return false;
+        }
+
+        expectedReceiverWallet = convertWalletToStandardFormat(expectedReceiverWallet); // Convertimos a formato estándar
 
         if (receiverWallet !== expectedReceiverWallet) {
             console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${receiverWallet}`);
