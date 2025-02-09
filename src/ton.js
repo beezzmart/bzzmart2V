@@ -1,10 +1,18 @@
 const axios = require("axios");
-const { ton } = require("./config");
+const { ton } = require("./config"); // Asegúrate de tener tu configuración de TON (API Key, baseURL, etc.)
+const Buffer = require('buffer').Buffer;
 
-// ✅ Función para limpiar direcciones (solo elimina "0:", pero NO cambia a minúsculas)
+// ✅ Función para limpiar direcciones (elimina "0:" pero no cambia a minúsculas)
 function cleanTONAddress(address) {
     if (!address) return "";
-    return address.replace(/^0:/, "");
+    return address.replace(/^0:/, "");  // Elimina "0:" al principio de la dirección
+}
+
+// ✅ Función para convertir la wallet a un formato consistente (Buffer y codificación correcta)
+function convertWalletToStandardFormat(wallet) {
+    const cleanWallet = cleanTONAddress(wallet);
+    const buffer = Buffer.from(cleanWallet, 'hex'); // Convertimos la wallet en un Buffer
+    return buffer.toString('hex');  // Convertimos el buffer nuevamente en string hexadecimal
 }
 
 // ✅ Función para obtener los detalles de la transacción de la API de TON
@@ -47,7 +55,7 @@ async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
 
         // ✅ Validar la wallet de destino correcta (sin cambiar a minúsculas)
         const receiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
-        const expectedReceiverWallet = cleanTONAddress(ton.publicAddress);
+        const expectedReceiverWallet = convertWalletToStandardFormat(ton.publicAddress); // Convertimos a formato estándar
 
         if (receiverWallet !== expectedReceiverWallet) {
             console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${receiverWallet}`);
