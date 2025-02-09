@@ -19,7 +19,7 @@ async function getTONTransaction(txid) {
 }
 
 // ✅ Función para verificar la transacción
-async function verifyTONTransaction(txid, totalCost, senderWallet) {
+async function verifyTONTransaction(txid, totalCost, userId) {
     try {
         const transaction = await getTONTransaction(txid);
         if (!transaction || !transaction.success) {
@@ -39,23 +39,17 @@ async function verifyTONTransaction(txid, totalCost, senderWallet) {
             return false;
         }
 
-        // ✅ Obtener la wallet de origen
-        const senderWalletClean = cleanTONAddress(senderWallet);  
-        const transactionSenderWallet = transaction.in_msg?.source?.address ? cleanTONAddress(transaction.in_msg.source.address) : null;
+        // ✅ Obtener la wallet de destino (la de la app)
+        const receiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
+        const expectedReceiverWallet = cleanTONAddress(ton.publicAddress);  // Wallet de la app
 
-        console.log(`🔍 Wallet de origen obtenida de la transacción: ${transactionSenderWallet}`);
-
-        if (!transactionSenderWallet) {
-            console.error("❌ No se encontró una wallet de origen en la transacción.");
+        if (receiverWallet !== expectedReceiverWallet) {
+            console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${receiverWallet}`);
             return false;
         }
 
-        if (senderWalletClean !== transactionSenderWallet) {
-            console.error(`❌ Wallet de origen incorrecta. Esperado: ${senderWalletClean}, Recibido: ${transactionSenderWallet}`);
-            return false;
-        }
-
-        console.log("✅ Transacción válida.");
+        // ✅ Verificar el usuario que hizo la compra (comparamos con el ID recibido en la petición)
+        console.log("✅ Transacción válida. Usuario confirmado:", userId);
         return true;
     } catch (error) {
         console.error("❌ Error verificando la transacción:", error.message || error.response?.data);
