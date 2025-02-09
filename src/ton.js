@@ -8,16 +8,19 @@ function cleanTONAddress(address) {
     return address.replace(/^0:/, "");  // Elimina el "0:" que podría aparecer en algunas wallets
 }
 
-// ✅ Función para convertir la wallet a un formato consistente para la comparación
-function convertWalletToStandardFormat(wallet) {
-    const cleanWallet = cleanTONAddress(wallet);  // Limpiamos la wallet
-    return cleanWallet.toLowerCase();  // Aseguramos que esté en minúsculas para la comparación
+// ✅ Función para no convertir la wallet, la usamos tal cual
+function compareWallets(expectedWallet, receivedWallet) {
+    if (expectedWallet !== receivedWallet) {
+        console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedWallet}, Recibido: ${receivedWallet}`);
+        return false;
+    }
+    return true;  // Si las wallets coinciden
 }
 
 // ✅ Función para obtener los detalles de la transacción desde la API de TON
 async function getTONTransaction(txid) {
     try {
-        const response = await axios.get(`https://tonapi.io/v2/blockchain/transactions/${txid}`); 
+        const response = await axios.get(`https://tonapi.io/v2/blockchain/transactions/${txid}`);
         return response.data; 
     } catch (error) {
         console.error("❌ Error al obtener la transacción de la API de TON:", error.response?.data || error.message);
@@ -48,13 +51,12 @@ async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
             return false;  // Verificamos si el monto enviado es el correcto
         }
 
-        // ✅ Limpiar y convertir la wallet de destino de la transacción
+        // ✅ Extraer la wallet de destino de la transacción
         const receiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
-        const expectedReceiverWallet = convertWalletToStandardFormat(ton.publicAddress);  // Convertimos la wallet esperada
+        const expectedReceiverWallet = 'uqdy447vb1k5ay1ky0oypkrdznub6_jvmtiem9k4wo7axjgx';  // Aquí usamos la wallet esperada tal cual
 
         // ✅ Verificamos si las wallets coinciden
-        if (receiverWallet !== expectedReceiverWallet) {
-            console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${receiverWallet}`);
+        if (!compareWallets(expectedReceiverWallet, receiverWallet)) {
             return false;  // Si las wallets no coinciden, retornamos falso
         }
 
