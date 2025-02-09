@@ -2,7 +2,7 @@ const axios = require("axios");
 const { ton } = require("./config"); // Asegúrate de tener tu configuración de TON (API Key, baseURL, etc.)
 const Buffer = require('buffer').Buffer; // Importamos Buffer para la correcta comparación de la wallet
 
-// ✅ Función para limpiar la dirección (elimina el prefijo "0:" de la dirección)
+// ✅ Función para limpiar la dirección (elimina el prefijo "0:" de la dirección y pasa a minúsculas)
 function cleanTONAddress(address) {
     if (!address) return "";
     return address.replace(/^0:/, "").toLowerCase();  // Elimina el "0:" y pasamos a minúsculas
