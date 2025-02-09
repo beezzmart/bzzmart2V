@@ -11,7 +11,7 @@ function cleanTONAddress(address) {
 // ✅ Función para comparar las wallets sin hacer transformaciones innecesarias
 function compareWallets(expectedWallet, receivedWallet) {
     if (expectedWallet !== receivedWallet) {
-        console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedWallet}, Recibido: ${receivedWallet}`);
+        console.error(`❌ Wallet de origen incorrecta. Esperado: ${expectedWallet}, Recibido: ${receivedWallet}`);
         return false;
     }
     return true;  // Si las wallets coinciden
@@ -29,7 +29,7 @@ async function getTONTransaction(txid) {
 }
 
 // ✅ Función para verificar la transacción de TON
-async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
+async function verifyTONTransaction(txid, totalCost, senderWallet) {
     try {
         // 🔹 Obtener los detalles de la transacción desde la API de TON
         const transaction = await getTONTransaction(txid);
@@ -51,22 +51,13 @@ async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
             return false;  // Verificamos si el monto enviado es el correcto
         }
 
-        // ✅ Extraer la wallet de destino de la transacción
-        const receiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
-        const expectedReceiverWallet = 'uqdy447vb1k5ay1ky0oypkrdznub6_jvmtiem9k4wo7axjgx';  // Aquí usamos la wallet esperada tal cual
+        // ✅ Limpiar y comparar la wallet de origen
+        const senderWalletClean = cleanTONAddress(senderWallet);  // Limpiamos la wallet del emisor
+        const transactionSenderWallet = cleanTONAddress(transaction.in_msg?.source?.address);  // Obtenemos la wallet del emisor de la transacción
 
-        // ✅ Verificamos si las wallets coinciden
-        if (!compareWallets(expectedReceiverWallet, receiverWallet)) {
-            return false;  // Si las wallets no coinciden, retornamos falso
-        }
-
-        // ✅ Validar la wallet de origen
-        const senderWalletClean = cleanTONAddress(senderWallet);  // Limpiamos la wallet de origen
-        const transactionSenderWallet = cleanTONAddress(transaction.in_msg?.source?.address);  // Obtenemos la wallet de origen de la transacción
-
-        if (transactionSenderWallet !== senderWalletClean) {
-            console.error(`❌ Wallet de origen incorrecta. Esperado: ${senderWalletClean}, Recibido: ${transactionSenderWallet}`);
-            return false;  // Si las wallets no coinciden, retornamos falso
+        // ✅ Verificamos si la wallet del emisor coincide con la introducida por el usuario
+        if (!compareWallets(senderWalletClean, transactionSenderWallet)) {
+            return false;  // Si la wallet no coincide, retornamos falso
         }
 
         console.log("✅ Transacción válida.");
