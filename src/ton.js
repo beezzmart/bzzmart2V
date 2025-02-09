@@ -1,5 +1,5 @@
 const axios = require("axios");
-const { ton } = require("./config"); // Asegúrate de tener tu configuración de TON (API Key, baseURL, etc.)
+const { ton } = require("./config");
 
 // ✅ Función para limpiar direcciones (elimina "0:" y las pone en minúsculas)
 function cleanTONAddress(address) {
@@ -7,52 +7,59 @@ function cleanTONAddress(address) {
     return address.replace(/^0:/, "").toLowerCase();
 }
 
-// Función para obtener los detalles de la transacción de la API de TON
+// ✅ Función para obtener los detalles de la transacción de la API de TON
 async function getTONTransaction(txid) {
     try {
-        const response = await axios.get(`https://tonapi.io/v2/blockchain/transactions/${txid}`); // Ajusta esta URL según la documentación de la API TON
-        return response.data; // Devuelve los datos de la transacción
+        const response = await axios.get(`https://tonapi.io/v2/blockchain/transactions/${txid}`); // ✅ Asegúrate de que esta URL es correcta
+        return response.data; 
     } catch (error) {
         console.error("❌ Error al obtener la transacción de la API de TON:", error.response?.data || error.message);
-        throw new Error("Error al obtener la transacción");
+        return null; // ⚠️ Devuelve null en caso de error
     }
 }
 
-// Función para verificar transacción en TON API
+// ✅ Función para verificar transacción en TON API
 async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
     try {
-        // Llamada a la API de TON para obtener la transacción
-        const transaction = await getTONTransaction(txid);  // Asegúrate de implementar la llamada API correctamente
+        // 🔹 Llamada a la API para obtener la transacción
+        const transaction = await getTONTransaction(txid);
 
-        // Verificar que la transacción existe
-        if (!transaction || transaction.success === false) {
+        // 🔴 Si la transacción no existe o es inválida, devolver false
+        if (!transaction || !transaction.success) {
             console.error("❌ Transacción no encontrada o fallida.");
             return false;
         }
 
-        // Verificar que el monto de la transacción sea igual al costo
-        // Usamos "value" en vez de "total_fees" ya que el "total_fees" es el costo de las tarifas, no del monto total
-        if (transaction.value !== totalCost) {
-            console.error("❌ El monto de la transacción no coincide con el costo de la compra.");
+        // ✅ Obtener el monto correcto desde `out_msgs`
+        if (!transaction.out_msgs || transaction.out_msgs.length === 0) {
+            console.error("❌ La transacción no tiene salidas (out_msgs).");
             return false;
         }
 
-        // Verificar que la wallet de destino sea la wallet del usuario
-        if (transaction.account.address !== senderWallet) {
-            console.error("❌ La dirección de la wallet de destino no es la correcta.");
+        // ✅ Extraer el monto real enviado en nanoTON
+        const txAmountNano = parseInt(transaction.out_msgs[0].value, 10); // ⚠️ Asegurar que es un número entero
+
+        // ✅ Comparar el monto con el esperado
+        if (txAmountNano !== totalCost) {
+            console.error(`❌ El monto de la transacción (${txAmountNano} nanoTON) no coincide con el costo esperado (${totalCost} nanoTON).`);
             return false;
         }
 
-        // Verificar que la wallet desde donde se envió es la correcta
-        if (transaction.in_msg.destination.address !== senderWallet) {
-            console.error("❌ La wallet desde donde se envió no coincide.");
+        // ✅ Validar la wallet de destino correcta
+        const receiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
+        const expectedReceiverWallet = cleanTONAddress(ton.publicAddress);
+
+        if (receiverWallet !== expectedReceiverWallet) {
+            console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${receiverWallet}`);
             return false;
         }
 
-        // Verificar que el usuario que realizó la compra es el mismo que el que la está haciendo
-        const transactionUser = await query("SELECT user_id FROM transactions WHERE txid = ?", [txid]);
-        if (transactionUser.length === 0 || transactionUser[0].user_id !== userId) {
-            console.error("❌ El usuario no coincide con el que realizó la transacción.");
+        // ✅ Validar la wallet de origen correcta
+        const senderWalletClean = cleanTONAddress(senderWallet);
+        const transactionSenderWallet = cleanTONAddress(transaction.in_msg?.source?.address);
+
+        if (transactionSenderWallet !== senderWalletClean) {
+            console.error(`❌ Wallet de origen incorrecta. Esperado: ${senderWalletClean}, Recibido: ${transactionSenderWallet}`);
             return false;
         }
 
