@@ -1,90 +1,77 @@
 const axios = require("axios");
 const { ton } = require("./config"); // Asegúrate de tener tu configuración de TON (API Key, baseURL, etc.)
-const Buffer = require('buffer').Buffer;
+const Buffer = require('buffer').Buffer; // Importamos Buffer para la correcta comparación de la wallet
 
-// ✅ Función para limpiar direcciones (elimina "0:" pero no cambia a minúsculas)
+// ✅ Función para limpiar la dirección (elimina el prefijo "0:" de la dirección)
 function cleanTONAddress(address) {
     if (!address) return "";
-    return address.replace(/^0:/, "");  // Elimina "0:" al principio de la dirección
+    return address.replace(/^0:/, "");  // Elimina el "0:" que podría aparecer en algunas wallets
 }
 
-// ✅ Función para convertir la wallet a un formato consistente (Buffer y codificación correcta)
+// ✅ Función para convertir la wallet a un formato consistente para la comparación
 function convertWalletToStandardFormat(wallet) {
-    const cleanWallet = cleanTONAddress(wallet);
-    const buffer = Buffer.from(cleanWallet, 'hex'); // Convertimos la wallet en un Buffer
-    return buffer.toString('hex');  // Convertimos el buffer nuevamente en string hexadecimal
+    const cleanWallet = cleanTONAddress(wallet);  // Limpiamos la wallet
+    return cleanWallet.toLowerCase();  // Aseguramos que esté en minúsculas para la comparación
 }
 
-// ✅ Función para obtener los detalles de la transacción de la API de TON
+// ✅ Función para obtener los detalles de la transacción desde la API de TON
 async function getTONTransaction(txid) {
     try {
         const response = await axios.get(`https://tonapi.io/v2/blockchain/transactions/${txid}`); 
         return response.data; 
     } catch (error) {
         console.error("❌ Error al obtener la transacción de la API de TON:", error.response?.data || error.message);
-        return null; // ⚠️ Devuelve null en caso de error
+        return null; // Si hay un error, devolvemos null
     }
 }
 
-// ✅ Función para verificar transacción en TON API
+// ✅ Función para verificar la transacción de TON
 async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
     try {
-        // 🔹 Llamada a la API para obtener la transacción
+        // 🔹 Obtener los detalles de la transacción desde la API de TON
         const transaction = await getTONTransaction(txid);
-
-        // 🔴 Si la transacción no existe o es inválida, devolver false
         if (!transaction || !transaction.success) {
             console.error("❌ Transacción no encontrada o fallida.");
-            return false;
+            return false;  // Si no se encuentra la transacción o es fallida, retornamos falso
         }
 
-        // ✅ Obtener el monto correcto desde `out_msgs`
+        // ✅ Verificar que la transacción tiene los mensajes de salida
         if (!transaction.out_msgs || transaction.out_msgs.length === 0) {
             console.error("❌ La transacción no tiene salidas (out_msgs).");
             return false;
         }
 
-        // ✅ Extraer el monto real enviado en nanoTON
-        const txAmountNano = parseInt(transaction.out_msgs[0].value, 10); // ⚠️ Asegurar que es un número entero
-
-        // ✅ Comparar el monto con el esperado
+        // ✅ Extraer el monto de la transacción en nanoTON
+        const txAmountNano = parseInt(transaction.out_msgs[0].value, 10);  // Aseguramos que sea un número entero
         if (txAmountNano !== totalCost) {
             console.error(`❌ El monto de la transacción (${txAmountNano} nanoTON) no coincide con el costo esperado (${totalCost} nanoTON).`);
-            return false;
+            return false;  // Verificamos si el monto enviado es el correcto
         }
 
-        // ✅ Validar la wallet de destino correcta (sin cambiar a minúsculas)
+        // ✅ Limpiar y convertir la wallet de destino de la transacción
         const receiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
-        
-        // 💥 Aquí verificamos si ton.publicAddress está bien definido y lo usamos como la wallet de destino esperada
-        let expectedReceiverWallet = ton.publicAddress;
-        
-        if (!expectedReceiverWallet) {
-            console.error("❌ No se ha definido la wallet de destino esperada en la configuración.");
-            return false;
-        }
+        const expectedReceiverWallet = convertWalletToStandardFormat(ton.publicAddress);  // Convertimos la wallet esperada
 
-        expectedReceiverWallet = convertWalletToStandardFormat(expectedReceiverWallet); // Convertimos a formato estándar
-
+        // ✅ Verificamos si las wallets coinciden
         if (receiverWallet !== expectedReceiverWallet) {
             console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${receiverWallet}`);
-            return false;
+            return false;  // Si las wallets no coinciden, retornamos falso
         }
 
-        // ✅ Validar la wallet de origen correcta
-        const senderWalletClean = cleanTONAddress(senderWallet);
-        const transactionSenderWallet = cleanTONAddress(transaction.in_msg?.source?.address);
+        // ✅ Validar la wallet de origen
+        const senderWalletClean = cleanTONAddress(senderWallet);  // Limpiamos la wallet de origen
+        const transactionSenderWallet = cleanTONAddress(transaction.in_msg?.source?.address);  // Obtenemos la wallet de origen de la transacción
 
         if (transactionSenderWallet !== senderWalletClean) {
             console.error(`❌ Wallet de origen incorrecta. Esperado: ${senderWalletClean}, Recibido: ${transactionSenderWallet}`);
-            return false;
+            return false;  // Si las wallets no coinciden, retornamos falso
         }
 
         console.log("✅ Transacción válida.");
-        return true;
+        return true;  // Si todo está correcto, retornamos verdadero
     } catch (error) {
-        console.error("❌ Error verificando transacción:", error.message || error.response?.data);
-        return false;
+        console.error("❌ Error verificando la transacción:", error.message || error.response?.data);
+        return false;  // Si ocurre un error, retornamos falso
     }
 }
 
