@@ -8,7 +8,7 @@ function cleanTONAddress(address) {
     return address.replace(/^0:/, "");  // Elimina el "0:" que podría aparecer en algunas wallets
 }
 
-// ✅ Función para no convertir la wallet, la usamos tal cual
+// ✅ Función para comparar las wallets sin hacer transformaciones innecesarias
 function compareWallets(expectedWallet, receivedWallet) {
     if (expectedWallet !== receivedWallet) {
         console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedWallet}, Recibido: ${receivedWallet}`);
