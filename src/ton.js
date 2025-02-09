@@ -5,7 +5,7 @@ const Buffer = require('buffer').Buffer; // Importamos Buffer para la correcta c
 // ✅ Función para limpiar la dirección (elimina el prefijo "0:" de la dirección)
 function cleanTONAddress(address) {
     if (!address) return "";
-    return address.replace(/^0:/, "");  // Elimina el "0:" que podría aparecer en algunas wallets
+    return address.replace(/^0:/, "").toLowerCase();  // Elimina el "0:" y pasamos a minúsculas
 }
 
 // ✅ Función para comparar las wallets sin hacer transformaciones innecesarias
