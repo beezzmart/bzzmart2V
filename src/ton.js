@@ -1,16 +1,16 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para limpiar direcciones (elimina "0:" y las pone en minúsculas)
+// ✅ Función para limpiar direcciones (solo elimina "0:", pero NO cambia a minúsculas)
 function cleanTONAddress(address) {
     if (!address) return "";
-    return address.replace(/^0:/, "").toLowerCase();
+    return address.replace(/^0:/, "");
 }
 
 // ✅ Función para obtener los detalles de la transacción de la API de TON
 async function getTONTransaction(txid) {
     try {
-        const response = await axios.get(`https://tonapi.io/v2/blockchain/transactions/${txid}`); // ✅ Asegúrate de que esta URL es correcta
+        const response = await axios.get(`https://tonapi.io/v2/blockchain/transactions/${txid}`); 
         return response.data; 
     } catch (error) {
         console.error("❌ Error al obtener la transacción de la API de TON:", error.response?.data || error.message);
@@ -45,7 +45,7 @@ async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
             return false;
         }
 
-        // ✅ Validar la wallet de destino correcta
+        // ✅ Validar la wallet de destino correcta (sin cambiar a minúsculas)
         const receiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
         const expectedReceiverWallet = cleanTONAddress(ton.publicAddress);
 
