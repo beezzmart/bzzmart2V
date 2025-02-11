@@ -8,10 +8,10 @@ function cleanTONAddress(address) {
     return address.replace(/^0:/, "").trim();
 }
 
-// ✅ Función para convertir la wallet a base64url (TON usa este formato)
-function convertWalletToBase64(walletHex) {
-    const buffer = Buffer.from(walletHex, "hex"); // Convertimos de hex a buffer
-    return buffer.toString("base64").replace(/\+/g, "-").replace(/\//g, "_"); // Formato base64url
+// ✅ Función para convertir una dirección de wallet HEX a Base64URL (TON usa este formato)
+function convertHexToBase64Url(hexAddress) {
+    const buffer = Buffer.from(hexAddress, "hex"); // Convertimos de hex a buffer
+    return buffer.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); // Formato base64url
 }
 
 // ✅ Función para obtener los detalles de la transacción desde la API de TON
@@ -46,15 +46,15 @@ async function verifyTONTransaction(txid, totalCost) {
             return false;
         }
 
-        // ✅ Obtener y convertir la wallet de destino
+        // ✅ Obtener y limpiar la wallet de destino desde la API
         const rawReceiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
-        const convertedReceiverWallet = convertWalletToBase64(rawReceiverWallet);
 
-        // ✅ Convertir la wallet esperada (del servidor)
-        const expectedReceiverWallet = convertWalletToBase64(cleanTONAddress(ton.publicAddress));
+        // ✅ Convertimos **solo** la wallet del servidor (`ton.publicAddress`) para que coincida con el formato de la API
+        const expectedReceiverWallet = convertHexToBase64Url(cleanTONAddress(ton.publicAddress));
 
-        if (convertedReceiverWallet !== expectedReceiverWallet) {
-            console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${convertedReceiverWallet}`);
+        // ✅ Comparamos directamente con la wallet recibida de la API
+        if (rawReceiverWallet !== expectedReceiverWallet) {
+            console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${rawReceiverWallet}`);
             return false;
         }
 
