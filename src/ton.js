@@ -1,18 +1,6 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para limpiar direcciones TON (Elimina "0:")
-function cleanTONAddress(address) {
-    if (!address) return "";
-    return address.replace(/^0:/, "");  
-}
-
-// ✅ Función para convertir una dirección TON a formato binario para comparación exacta
-function convertTONAddressToBuffer(address) {
-    if (!address) return Buffer.alloc(0);
-    return Buffer.from(cleanTONAddress(address), "hex"); // Convertir a Buffer hexadecimal
-}
-
 // ✅ Función para obtener los detalles de la transacción desde la API de TON
 async function getTONTransaction(txid) {
     try {
@@ -20,11 +8,11 @@ async function getTONTransaction(txid) {
         return response.data;
     } catch (error) {
         console.error("❌ Error al obtener la transacción de la API de TON:", error.response?.data || error.message);
-        return null; 
+        return null;
     }
 }
 
-// ✅ Función para verificar la transacción en la blockchain de TON
+// ✅ Función para verificar la transacción en TON
 async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
     try {
         const transaction = await getTONTransaction(txid);
@@ -45,28 +33,21 @@ async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
             return false;
         }
 
-        // ✅ Obtener la wallet de destino (de la app) y formatearla
-        const receiverWalletRaw = transaction.out_msgs[0].destination?.address;
-        const expectedReceiverWalletRaw = ton.publicAddress; // Wallet de la app
+        // ✅ Obtener la wallet de destino (sin modificarla)
+        const receiverWallet = transaction.out_msgs[0].destination?.address;
+        const expectedReceiverWallet = ton.publicAddress;  // Wallet de la app
 
-        // Convertimos ambas direcciones a formato binario con Buffer
-        const receiverWalletBuffer = convertTONAddressToBuffer(receiverWalletRaw);
-        const expectedReceiverWalletBuffer = convertTONAddressToBuffer(expectedReceiverWalletRaw);
-
-        // Comparar las wallets con Buffer
-        if (!receiverWalletBuffer.equals(expectedReceiverWalletBuffer)) {
-            console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWalletRaw}, Recibido: ${receiverWalletRaw}`);
+        // **Comparación directa sin modificar**
+        if (receiverWallet !== expectedReceiverWallet) {
+            console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${receiverWallet}`);
             return false;
         }
 
         // ✅ Verificar la wallet de origen (del usuario)
-        const senderWalletRaw = transaction.in_msg?.source?.address;
-        const senderWalletBuffer = convertTONAddressToBuffer(senderWallet);
-        const senderWalletFromTxBuffer = convertTONAddressToBuffer(senderWalletRaw);
+        const senderWalletFromTx = transaction.in_msg?.source?.address;
 
-        // Comparar la wallet de origen con Buffer
-        if (!senderWalletFromTxBuffer.equals(senderWalletBuffer)) {
-            console.error(`❌ Wallet de origen incorrecta. Esperado: ${senderWallet}, Recibido: ${senderWalletRaw}`);
+        if (senderWalletFromTx !== senderWallet) {
+            console.error(`❌ Wallet de origen incorrecta. Esperado: ${senderWallet}, Recibido: ${senderWalletFromTx}`);
             return false;
         }
 
