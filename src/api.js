@@ -215,10 +215,11 @@ router.post("/add_bee", async (req, res) => {
     }
 
     // ✅ Registrar la transacción
+    const amountTON = totalCost / 1e9;
     await query("INSERT INTO transactions (txid, user_id, amount, type) VALUES (?, ?, ?, ?)", [
       txid,
       userId,
-      totalCost,
+      amountTON,
       "bee"
     ]);
 
