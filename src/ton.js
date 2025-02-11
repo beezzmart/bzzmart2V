@@ -1,10 +1,10 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para limpiar direcciones (elimina "0:" si existe)
+// ✅ Función para limpiar direcciones TON (elimina el "0:" si lo tiene)
 function cleanTONAddress(address) {
     if (!address) return "";
-    return address.replace(/^0:/, "").trim();  // Quitamos el prefijo "0:" y espacios en blanco
+    return address.replace(/^0:/, "").trim();
 }
 
 // ✅ Función para obtener los detalles de la transacción desde la API de TON
@@ -19,7 +19,7 @@ async function getTONTransaction(txid) {
 }
 
 // ✅ Función para verificar la transacción en TON
-async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
+async function verifyTONTransaction(txid, totalCost) {
     try {
         const transaction = await getTONTransaction(txid);
         if (!transaction || !transaction.success) {
@@ -39,27 +39,16 @@ async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
             return false;
         }
 
-        // ✅ Wallet de destino esperada (servidor)
-        const expectedReceiverWallet = cleanTONAddress(ton.publicAddress);  // Wallet de la app
-        // ✅ Wallet de destino obtenida de la transacción
+        // ✅ Obtener la wallet de destino (la de nuestro servidor)
         const receiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
+        const expectedReceiverWallet = cleanTONAddress(ton.publicAddress); // Wallet de nuestro servidor
 
         if (receiverWallet !== expectedReceiverWallet) {
             console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${receiverWallet}`);
             return false;
         }
 
-        // ✅ Wallet de origen esperada (del usuario)
-        const expectedSenderWallet = cleanTONAddress(senderWallet);
-        // ✅ Wallet de origen obtenida de la transacción
-        const senderWalletFromTx = cleanTONAddress(transaction.in_msg?.source?.address);
-
-        if (senderWalletFromTx !== expectedSenderWallet) {
-            console.error(`❌ Wallet de origen incorrecta. Esperado: ${expectedSenderWallet}, Recibido: ${senderWalletFromTx}`);
-            return false;
-        }
-
-        console.log("✅ Transacción válida. Usuario confirmado:", userId);
+        console.log("✅ Transacción válida.");
         return true;
     } catch (error) {
         console.error("❌ Error verificando la transacción:", error.message || error.response?.data);
