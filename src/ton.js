@@ -1,10 +1,17 @@
 const axios = require("axios");
 const { ton } = require("./config");
+const { Buffer } = require("buffer"); // Importamos Buffer para la conversión correcta
 
 // ✅ Función para limpiar direcciones TON (elimina el "0:" si lo tiene)
 function cleanTONAddress(address) {
     if (!address) return "";
     return address.replace(/^0:/, "").trim();
+}
+
+// ✅ Función para convertir la wallet a base64url (TON usa este formato)
+function convertWalletToBase64(walletHex) {
+    const buffer = Buffer.from(walletHex, "hex"); // Convertimos de hex a buffer
+    return buffer.toString("base64").replace(/\+/g, "-").replace(/\//g, "_"); // Formato base64url
 }
 
 // ✅ Función para obtener los detalles de la transacción desde la API de TON
@@ -39,12 +46,15 @@ async function verifyTONTransaction(txid, totalCost) {
             return false;
         }
 
-        // ✅ Obtener la wallet de destino (la de nuestro servidor)
-        const receiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
-        const expectedReceiverWallet = cleanTONAddress(ton.publicAddress); // Wallet de nuestro servidor
+        // ✅ Obtener y convertir la wallet de destino
+        const rawReceiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
+        const convertedReceiverWallet = convertWalletToBase64(rawReceiverWallet);
 
-        if (receiverWallet !== expectedReceiverWallet) {
-            console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${receiverWallet}`);
+        // ✅ Convertir la wallet esperada (del servidor)
+        const expectedReceiverWallet = convertWalletToBase64(cleanTONAddress(ton.publicAddress));
+
+        if (convertedReceiverWallet !== expectedReceiverWallet) {
+            console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${convertedReceiverWallet}`);
             return false;
         }
 
