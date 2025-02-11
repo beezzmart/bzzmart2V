@@ -280,10 +280,11 @@ router.post("/buy_colony", async (req, res) => {
     ]);
 
     // ✅ Registrar la transacción
+     const amountTON = colonyCost / 1e9;
     await query("INSERT INTO transactions (txid, user_id, amount, type) VALUES (?, ?, ?, ?)", [
       txid,
       userId,
-      colonyCost,
+      amountTON,
       "colony"
     ]);
 
