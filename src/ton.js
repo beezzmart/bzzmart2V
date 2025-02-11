@@ -10,6 +10,7 @@ function cleanTONAddress(address) {
 
 // ✅ Función para convertir una dirección de wallet HEX a Base64URL (TON usa este formato)
 function convertHexToBase64Url(hexAddress) {
+    if (!hexAddress) return "";
     const buffer = Buffer.from(hexAddress, "hex"); // Convertimos de hex a buffer
     return buffer.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); // Formato base64url
 }
@@ -49,8 +50,16 @@ async function verifyTONTransaction(txid, totalCost) {
         // ✅ Obtener y limpiar la wallet de destino desde la API
         const rawReceiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
 
-        // ✅ Convertimos **solo** la wallet del servidor (`ton.publicAddress`) para que coincida con el formato de la API
-        const expectedReceiverWallet = convertHexToBase64Url(cleanTONAddress(ton.publicAddress));
+        // ✅ Asegurar que `ton.publicAddress` está definido y convertirlo correctamente
+        if (!ton.publicAddress) {
+            console.error("❌ ton.publicAddress no está definido en config.js");
+            return false;
+        }
+        const expectedReceiverWallet = cleanTONAddress(ton.publicAddress);
+
+        // ✅ Mostrar en consola para depuración
+        console.log("🔍 Wallet esperada (Servidor):", expectedReceiverWallet || "No definida");
+        console.log("🔍 Wallet recibida (TON API):", rawReceiverWallet || "No definida");
 
         // ✅ Comparamos directamente con la wallet recibida de la API
         if (rawReceiverWallet !== expectedReceiverWallet) {
