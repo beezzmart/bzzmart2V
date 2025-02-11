@@ -37,14 +37,14 @@ gameSettings: {
     },
     maxColonies: 6,
     colonyCost: {
-      basica: 370000000,   // 0.38 TON en nanoton
+      basica: 5000000000,   // 0.38 TON en nanoton
       estandar: 8000000000, 
       oro: 15000000000,
       diamante: 20000000000,
       rubi: 25000000000,
     },
     beeCosts: {
-      standard: 370000000,  // 0.38 TON en nanoton
+      standard: 3000000000,  // 0.38 TON en nanoton
       gold: 5000000000,
     },
   },
