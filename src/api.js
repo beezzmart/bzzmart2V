@@ -245,34 +245,45 @@ router.post("/buy_colony", async (req, res) => {
 
   try {
     const user = await query("SELECT id FROM users WHERE telegram_id = ?", [telegramId]);
-    if (user.length === 0) return res.status(404).json({ success: false, error: "Usuario no encontrado." });
-
-    const userId = user[0].id;
-    const userColonies = await query("SELECT COUNT(*) as total FROM colonies WHERE user_id = ?", [userId]);
-
-    if (userColonies[0].total >= gameSettings.maxColonies) {
-      return res.status(400).json({ success: false, error: "Has alcanzado el límite de colmenas." });
+    if (user.length === 0) {
+      return res.status(404).json({ success: false, error: "Usuario no encontrado." });
     }
 
+    const userId = user[0].id;
+
+    // 🔹 Verificar cuántas colmenas tiene el usuario
+    const userColonies = await query("SELECT COUNT(*) as total FROM colonies WHERE user_id = ?", [userId]);
+    if (userColonies[0].total >= gameSettings.maxColonies) {
+      return res.status(400).json({ success: false, error: "🚫 Has alcanzado el límite de colmenas (máximo 6)." });
+    }
+
+    // 🔹 Verificar si ya tiene una colmena del mismo tipo
+    const existingColony = await query("SELECT id FROM colonies WHERE user_id = ? AND type = ?", [userId, colonyType]);
+    if (existingColony.length > 0) {
+      return res.status(400).json({ success: false, error: `🚫 Ya posees una colmena de tipo ${colonyType}.` });
+    }
+
+    // 🔹 Validar que el tipo de colmena es válido
     const colonyCosts = gameSettings.colonyCost;
     if (!(colonyType in colonyCosts)) {
-      return res.status(400).json({ success: false, error: "Tipo de colmena no válido." });
+      return res.status(400).json({ success: false, error: "🚫 Tipo de colmena no válido." });
     }
 
     const colonyCost = colonyCosts[colonyType];
 
+    // 🔹 Verificar si la transacción ya fue usada
     const existingTx = await query("SELECT * FROM transactions WHERE txid = ?", [txid]);
     if (existingTx.length > 0) {
-      return res.status(400).json({ success: false, error: "Esta transacción ya ha sido utilizada." });
+      return res.status(400).json({ success: false, error: "🚫 Esta transacción ya ha sido utilizada." });
     }
 
     // ✅ Verificar la transacción en TON API
     const transactionValid = await verifyTONTransaction(txid, colonyCost, userId);
     if (!transactionValid) {
-      return res.status(400).json({ success: false, error: "Transacción no válida o no encontrada." });
+      return res.status(400).json({ success: false, error: "🚫 Transacción no válida o no encontrada." });
     }
 
-    // ✅ Agregar colmena en la base de datos
+    // ✅ Agregar la colmena a la base de datos
     await query("INSERT INTO colonies (user_id, colony_name, type, created_at) VALUES (?, ?, ?, NOW())", [
       userId,
       `Colmena ${colonyType}`,
@@ -280,7 +291,7 @@ router.post("/buy_colony", async (req, res) => {
     ]);
 
     // ✅ Registrar la transacción
-     const amountTON = colonyCost / 1e9;
+    const amountTON = colonyCost / 1e9;
     await query("INSERT INTO transactions (txid, user_id, amount, type) VALUES (?, ?, ?, ?)", [
       txid,
       userId,
@@ -288,11 +299,11 @@ router.post("/buy_colony", async (req, res) => {
       "colony"
     ]);
 
-    res.json({ success: true, message: "✅ Colmena comprada con éxito." });
+    res.json({ success: true, message: `✅ Colmena ${colonyType} comprada con éxito.` });
 
   } catch (error) {
-    console.error("Error al comprar colmena:", error);
-    res.status(500).json({ success: false, error: "Error interno del servidor." });
+    console.error("❌ Error al comprar colmena:", error);
+    res.status(500).json({ success: false, error: "❌ Error interno del servidor." });
   }
 });
 
