@@ -1,6 +1,12 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
+// ✅ Función para limpiar direcciones (elimina "0:" si existe)
+function cleanTONAddress(address) {
+    if (!address) return "";
+    return address.replace(/^0:/, "").trim();  // Quitamos el prefijo "0:" y espacios en blanco
+}
+
 // ✅ Función para obtener los detalles de la transacción desde la API de TON
 async function getTONTransaction(txid) {
     try {
@@ -26,28 +32,30 @@ async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
             return false;
         }
 
-        // ✅ Obtener el monto de la transacción
+        // ✅ Obtener el monto de la transacción en nanoTON
         const txAmountNano = parseInt(transaction.out_msgs[0].value, 10);
         if (txAmountNano !== totalCost) {
             console.error(`❌ El monto de la transacción (${txAmountNano} nanoTON) no coincide con el costo esperado (${totalCost} nanoTON).`);
             return false;
         }
 
-        // ✅ Obtener la wallet de destino (sin modificarla)
-        const receiverWallet = transaction.out_msgs[0].destination?.address;
-        const expectedReceiverWallet = ton.publicAddress;  // Wallet de la app
+        // ✅ Wallet de destino esperada (servidor)
+        const expectedReceiverWallet = cleanTONAddress(ton.publicAddress);  // Wallet de la app
+        // ✅ Wallet de destino obtenida de la transacción
+        const receiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
 
-        // **Comparación directa sin modificar**
         if (receiverWallet !== expectedReceiverWallet) {
             console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${receiverWallet}`);
             return false;
         }
 
-        // ✅ Verificar la wallet de origen (del usuario)
-        const senderWalletFromTx = transaction.in_msg?.source?.address;
+        // ✅ Wallet de origen esperada (del usuario)
+        const expectedSenderWallet = cleanTONAddress(senderWallet);
+        // ✅ Wallet de origen obtenida de la transacción
+        const senderWalletFromTx = cleanTONAddress(transaction.in_msg?.source?.address);
 
-        if (senderWalletFromTx !== senderWallet) {
-            console.error(`❌ Wallet de origen incorrecta. Esperado: ${senderWallet}, Recibido: ${senderWalletFromTx}`);
+        if (senderWalletFromTx !== expectedSenderWallet) {
+            console.error(`❌ Wallet de origen incorrecta. Esperado: ${expectedSenderWallet}, Recibido: ${senderWalletFromTx}`);
             return false;
         }
 
