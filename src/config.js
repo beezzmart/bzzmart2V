@@ -44,7 +44,7 @@ gameSettings: {
       rubi: 25000000000,
     },
     beeCosts: {
-      standard: 3000000000,  // 0.38 TON en nanoton
+      standard: 37000000,  // 0.38 TON en nanoton
       gold: 5000000000,
     },
   },
