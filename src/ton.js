@@ -1,12 +1,6 @@
 const axios = require("axios");
 const { ton } = require("./config");
 
-// ✅ Función para limpiar direcciones TON
-function cleanTONAddress(address) {
-    if (!address) return "";
-    return address.replace(/^0:/, "").toLowerCase();  
-}
-
 // ✅ Función para obtener los detalles de la transacción desde la API de TON
 async function getTONTransaction(txid) {
     try {
@@ -14,12 +8,12 @@ async function getTONTransaction(txid) {
         return response.data;
     } catch (error) {
         console.error("❌ Error al obtener la transacción de la API de TON:", error.response?.data || error.message);
-        return null; 
+        return null;
     }
 }
 
 // ✅ Función para verificar la transacción
-async function verifyTONTransaction(txid, totalCost, userId) {
+async function verifyTONTransaction(txid, totalCost, senderWallet, userId) {
     try {
         const transaction = await getTONTransaction(txid);
         if (!transaction || !transaction.success) {
@@ -40,15 +34,16 @@ async function verifyTONTransaction(txid, totalCost, userId) {
         }
 
         // ✅ Obtener la wallet de destino (la de la app)
-        const receiverWallet = cleanTONAddress(transaction.out_msgs[0].destination?.address);
-        const expectedReceiverWallet = cleanTONAddress(ton.publicAddress);  // Wallet de la app
+        const receiverWallet = transaction.out_msgs[0].destination?.address;
+        const expectedReceiverWallet = ton.publicAddress; // Wallet de la app
 
         if (receiverWallet !== expectedReceiverWallet) {
             console.error(`❌ Wallet de destino incorrecta. Esperado: ${expectedReceiverWallet}, Recibido: ${receiverWallet}`);
             return false;
         }
 
-        // ✅ Verificar el usuario que hizo la compra (comparamos con el ID recibido en la petición)
+
+
         console.log("✅ Transacción válida. Usuario confirmado:", userId);
         return true;
     } catch (error) {
