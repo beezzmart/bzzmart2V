@@ -36,7 +36,7 @@ bot.start((ctx) => {
 
   // Mensaje general para otros casos
   return ctx.reply(
-    "Bienvenido a esta dulce aventura, recolecta miel cada 24 horas, junta muchos litros y hazte rico. Accede ahora y recibe como regalo 1 Colmena + 1 Abeja (free), entra rapido que se agotan:",
+    "Bienvenido a esta dulce aventura, recolecta miel cada 24 horas, junta muchos litros y hazte rico. Accede ahora y recibe como regalo 1 Colmena + 1 Abeja (free), entra pronto que se agotan:",
     {
       reply_markup: {
         inline_keyboard: [
