@@ -9,7 +9,7 @@ const https = require("https");
 
 // Keep-alive para Railway
 setInterval(() => {
-  https.get("https://web-production-141b2.up.railway.app/api/user_status");
+  https.get("https://bzzmart2v.onrender.com/api/user_status");
   console.log("Keep-alive ping enviado");
 }, 5 * 60 * 1000); // Cada 5 minutos
 
