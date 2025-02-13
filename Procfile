@@ -1,1 +1,2 @@
-web: node src/bot.js
+web: npm install && node src/bot.js
+
