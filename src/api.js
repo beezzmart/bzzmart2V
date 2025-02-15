@@ -315,9 +315,9 @@ router.post("/buy_colony", async (req, res) => {
 
 // Ruta: Retirar TON
 router.post("/withdraw", async (req, res) => {
-  const { id: telegramId, litros, wallet } = req.body;
+  const { id: telegramId, litros, wallet, memow } = req.body;
 
-  if (!telegramId || !litros || !wallet) {
+  if (!telegramId || !litros || !wallet || !memow) {
     return res
       .status(400)
       .json({ success: false, error: "Faltan datos necesarios." });
@@ -355,8 +355,8 @@ router.post("/withdraw", async (req, res) => {
     }
 
     await query(
-      "INSERT INTO withdraw_requests (user_id, gotas, ton_amount, wallet_address) VALUES (?, ?, ?, ?)",
-      [userId, gotasNecesarias, litros, wallet],
+      "INSERT INTO withdraw_requests (user_id, gotas, ton_amount, wallet_address, memo_wallet) VALUES (?, ?, ?, ?, ?)",
+      [userId, gotasNecesarias, litros, wallet, memow],
     );
 
     await query("UPDATE users SET gotas = gotas - ? WHERE id = ?", [
