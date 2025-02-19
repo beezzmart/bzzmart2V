@@ -28,7 +28,7 @@ router.get("/user_status", async (req, res) => {
   try {
     console.log("Obteniendo datos del usuario con ID:", telegramId);
 
-    const user = await query("SELECT id, gotas, last_collected, tutorial, ton_amount, wallet_address, requested_at, status FROM users WHERE telegram_id = ?", [telegramId]);
+    const user = await query("SELECT id, gotas, last_collected, tutorial, ton_amount, wallet_address, requested_at, status FROM users && withdraw_requests WHERE telegram_id = ?", [telegramId]);
 
     if (user.length === 0) {
       return res.status(404).json({ success: false, error: "Usuario no encontrado." });
