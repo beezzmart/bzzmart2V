@@ -29,7 +29,7 @@ router.get("/user_status", async (req, res) => {
     console.log("Obteniendo datos del usuario con ID:", telegramId);
 
     const user = await query("SELECT id, gotas, last_collected, tutorial FROM users WHERE telegram_id = ?", [telegramId]);
-    const wiuser = await query("SELECT ton_amount, wallet_address, requested_at, status FROM withdraw_requests WHERE telegram_id = ?", [telegramId]);
+    
     if (user.length === 0) {
       return res.status(404).json({ success: false, error: "Usuario no encontrado." });
     }
@@ -38,7 +38,10 @@ router.get("/user_status", async (req, res) => {
 const tutorial = user[0].tutorial; // Agregar el estado del tutorial
     const gotas = user[0].gotas;
     const lastCollected = user[0].last_collected;
+
     
+    const wiuser = await query("SELECT ton_amount, wallet_address, requested_at, status FROM withdraw_requests WHERE user_id = ?",
+      [userId]);
   
     const tonwith = wiuser[0].ton_amount;
     const walwith = wiuser[0].wallet_address;
