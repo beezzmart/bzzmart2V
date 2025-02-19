@@ -28,7 +28,7 @@ router.get("/user_status", async (req, res) => {
   try {
     console.log("Obteniendo datos del usuario con ID:", telegramId);
 
-    const user = await query("SELECT id, gotas, last_collected, tutorial FROM users WHERE telegram_id = ?", [telegramId]);
+    const user = await query("SELECT id, gotas, last_collected, tutorial, ton_amount, wallet_address, requested_at, status FROM users WHERE telegram_id = ?", [telegramId]);
 
     if (user.length === 0) {
       return res.status(404).json({ success: false, error: "Usuario no encontrado." });
@@ -38,6 +38,10 @@ router.get("/user_status", async (req, res) => {
 const tutorial = user[0].tutorial; // Agregar el estado del tutorial
     const gotas = user[0].gotas;
     const lastCollected = user[0].last_collected;
+    const tonwith = user[0].ton_amount;
+    const walwith = user[0].wallet_address;
+    const datewith = user[0].requested_at;
+    const statuwith = user[0].status;
 
     // Obtener colonias del usuario con información adicional
  const colonies = await query(
@@ -74,6 +78,10 @@ for (let colmena of colonies) {
       gotas,
       last_collected: lastCollected,
          tutorial, //  Ahora enviamos la info del tutorial
+      ton_amount: tonwith,
+       wallet_address: walwith,
+   requested_at:datewith,
+       status: statuwith,
       colonias: colonies.map(colony => colony.id),  // Mantiene la estructura original (solo los IDs)
       colonias_info: Array.isArray(colonies) ? colonies : [], // Información completa de cada colmena
       abejas: bees[0].total, // Se mantiene la cuenta total de abejas
