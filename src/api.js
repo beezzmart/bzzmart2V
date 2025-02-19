@@ -39,14 +39,19 @@ const tutorial = user[0].tutorial; // Agregar el estado del tutorial
     const gotas = user[0].gotas;
     const lastCollected = user[0].last_collected;
 
-    
-    const wiuser = await query("SELECT ton_amount, wallet_address, requested_at, status FROM withdraw_requests WHERE user_id = ?",
-      [userId]);
-  
-    const tonwith = wiuser[0].ton_amount;
-    const walwith = wiuser[0].wallet_address;
-    const datewith = wiuser[0].requested_at;
-    const statuwith = wiuser[0].status;
+   // Obtener retiros del usuario desde withdraw_requests
+    const wiuser = await query(
+      "SELECT ton_amount, wallet_address, requested_at, status FROM withdraw_requests WHERE user_id = ? ORDER BY requested_at DESC LIMIT 3",
+      [userId]
+    );
+
+    // Formatear los retiros (si existen)
+    const withdrawals = wiuser.map(w => ({
+      ton_amount: w.ton_amount,
+      wallet_address: w.wallet_address,
+      requested_at: w.requested_at,
+      status: w.status
+    }));
 
     // Obtener colonias del usuario con información adicional
  const colonies = await query(
@@ -83,10 +88,7 @@ for (let colmena of colonies) {
       gotas,
       last_collected: lastCollected,
          tutorial, //  Ahora enviamos la info del tutorial
-      ton_amount: tonwith,
-       wallet_address: walwith,
-   requested_at:datewith,
-       status: statuwith,
+      withdrawals,
       colonias: colonies.map(colony => colony.id),  // Mantiene la estructura original (solo los IDs)
       colonias_info: Array.isArray(colonies) ? colonies : [], // Información completa de cada colmena
       abejas: bees[0].total, // Se mantiene la cuenta total de abejas
