@@ -155,13 +155,10 @@ router.post("/collect_nectar", async (req, res) => {
 
     // Formatear la fecha actual en `YYYY-MM-DD HH:MM`
    const formattedDate = now.toISOString().slice(0, 19).replace("T", " ");
+
+        // Actualizar las gotas y la última fecha de recolección en la base de datos
     await query("UPDATE users SET gotas = gotas + ?, last_collected = ? WHERE id = ?", [totalProduction, formattedDate, userId]);
 
-    // Actualizar las gotas y la última fecha de recolección en la base de datos
-    await query(
-      "UPDATE users SET gotas = gotas + ?, last_collected = ? WHERE id = ?",
-      [totalProduction, formattedDate, userId]
-    );
 
     res.json({ success: true, gotas: totalProduction, lastCollected: formattedDate });
   } catch (error) {
