@@ -28,15 +28,16 @@ async function startBot() {
 // Manejar el comando /start
 bot.start((ctx) => {
   const userId = ctx.from.id; // ID del usuario
-
-
-  // Generar la URL de la WebApp con el user_id
+ // Generar la URL de la WebApp con el user_id
   const webAppUrl = `https://beesmart.ct.ws/public/?user_id=${userId}`;
-
-
-  // Mensaje general para otros casos
-  return ctx.reply(
-    "Bienvenido a esta dulce aventura, recolecta miel cada 24 horas, junta muchos litros y hazte rico. Accede ahora y recibe como regalo 1 Colmena + 1 Abeja (free), entra pronto que se agotan:",
+  
+async function registerUser(telegramId) {
+  // Verificar si el usuario ya está registrado
+  const existingUser = await query('SELECT id FROM users WHERE telegram_id = ?', [telegramId]);
+  
+  if (existingUser.length > 0) {
+      return ctx.reply(
+    "¡Ya estás registrado! Recolecta miel cada 24 horas, junta muchos litros e intercambialos por Toncoin.",
     {
       reply_markup: {
         inline_keyboard: [
@@ -45,7 +46,36 @@ bot.start((ctx) => {
       },
     }
   ); 
-});
+  }
+
+  // Insertar el usuario en la tabla `users`
+  const result = await query('INSERT INTO users (telegram_id, gotas, last_collected, tutorial) VALUES (?, ?, ?, ?)', [telegramId, 0, null, 0]);
+  const userId = result.insertId;
+
+  // Crear una colmena inicial para el usuario
+  const colonyResult = await query('INSERT INTO colonies (user_id, colony_name, type, created_at) VALUES (?, ?, ?, NOW())', [userId, 'Colmena Inicial', 'free']);
+  const colonyId = colonyResult.insertId;
+
+  // Agregar una abeja free a la colmena inicial
+  await query('INSERT INTO bees (colony_id, type, birth_date) VALUES (?, ?, ?)', [colonyId, 'free', new Date()]);
+  
+      return ctx.reply(
+    "Recibiste tu primera colmena con una abeja Free. Recolecta miel cada 24 horas, junta muchos litros e intercambialos por Toncoin.",
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "ENTRAR", web_app: { url: webAppUrl } }],
+        ],
+      },
+    }
+  ); 
+  
+}
+
+ 
+
+
+
 
 
 
