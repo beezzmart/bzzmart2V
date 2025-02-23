@@ -148,6 +148,13 @@ router.post("/collect_nectar", async (req, res) => {
       [userId]
     );
 
+     if (bees.length === 0) {
+      return res.json({
+        success: false,
+        error: "No tienes abejas. Compra una abeja primero para poder recolectar nectar.",
+      });
+    }
+
     let totalProduction = 0;
     bees.forEach((bee) => {
       totalProduction += gameSettings.dailyReward[bee.type] || 0;
