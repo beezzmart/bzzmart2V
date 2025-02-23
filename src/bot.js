@@ -58,14 +58,15 @@ async function registerUser(telegramId, ctx, webAppUrl) {
     const userId = result.insertId;
 
     // Crear una colmena inicial para el usuario
-    const colonyResult = await query('INSERT INTO colonies (user_id, colony_name, type, created_at) VALUES (?, ?, ?, NOW())', [userId, 'Colmena Inicial', 'free']);
-    const colonyId = colonyResult.insertId;
+  //  const colonyResult = await query('INSERT INTO colonies (user_id, colony_name, type, created_at) VALUES (?, ?, ?, NOW())', [userId, 'Colmena Inicial', 'free']);
+  //  const colonyId = colonyResult.insertId;
 
     // Agregar una abeja free a la colmena inicial
-    await query('INSERT INTO bees (colony_id, type, birth_date) VALUES (?, ?, ?)', [colonyId, 'free', new Date()]);
+//    await query('INSERT INTO bees (colony_id, type, birth_date) VALUES (?, ?, ?)', [colonyId, 'free', new Date()]);
     
     return ctx.reply(
-      "Recibiste tu primera colmena con una abeja Free. Recolecta miel cada 24 horas, junta muchos litros e intercámbialos por Toncoin.",
+     // "Recibiste tu primera colmena con una abeja Free. Recolecta miel cada 24 horas, junta muchos litros e intercámbialos por Toncoin.",
+       "Gracias por tu interes en nuestra app, de momento no hay stock disponible de abejas (FREE) pero estas invitado a quedarte en nuestro grupo @Beezzmart donde podras participar en eventos y ganar una abeja (FREE). Recolecta miel cada 24 horas, junta muchos litros e intercámbialos por Toncoin.",
       {
         reply_markup: {
           inline_keyboard: [
