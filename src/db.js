@@ -16,7 +16,10 @@ async function connectDB() {
     console.log('📦 Conexión a MySQL exitosa');
 
 
-
+await query(`
+  ALTER TABLE colonies
+  ADD COLUMN type ENUM('basica', 'estandar', 'oro', 'diamante', 'rubi') DEFAULT NULL
+`);
 
     
     // Manejar desconexión y reconexión
