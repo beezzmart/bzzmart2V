@@ -16,6 +16,10 @@ async function connectDB() {
     console.log('📦 Conexión a MySQL exitosa');
 
 
+await query(`
+  ALTER TABLE colonies
+  ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+`);
 
     
     // Manejar desconexión y reconexión
