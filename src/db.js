@@ -15,10 +15,7 @@ async function connectDB() {
 
     console.log('📦 Conexión a MySQL exitosa');
 
-await query(`
-  ALTER TABLE users
-  ADD COLUMN tutorial BOOLEAN DEFAULT FALSE
-`);
+
 
     
     // Manejar desconexión y reconexión
